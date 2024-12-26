@@ -1,0 +1,7 @@
+image: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/mpc_track_fastplanner/src/omni_robot/Map/3v3.pgm
+resolution: 0.050000
+origin: [-4.500000, -7.100000, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+

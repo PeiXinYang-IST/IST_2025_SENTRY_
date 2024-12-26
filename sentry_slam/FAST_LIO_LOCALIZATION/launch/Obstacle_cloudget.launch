@@ -1,0 +1,6 @@
+<launch>    
+    <node pkg="fast_lio_localization" type="Obstacle_cloudget" name="Obstacle_cloudget" output="screen">
+		<param name="kdtree_search_radius" value="0.03"/>
+		<param name="filter_search_radius" value="0.15"/>
+	</node>
+</launch>

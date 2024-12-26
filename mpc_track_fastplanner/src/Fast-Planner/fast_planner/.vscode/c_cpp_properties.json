@@ -1,0 +1,27 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/rm/Karl_ws_6.13/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/rm/Karl_ws_6.13/src/FAST_LIO/include/**",
+        "/home/rm/Karl_ws_6.13/src/FAST_LIO_LOCALIZATION/include/**",
+        "/home/rm/Karl_ws_6.13/src/Tools/linefit_ground_segmentation/linefit_ground_segmentation/include/**",
+        "/home/rm/Karl_ws_6.13/src/Tools/pointcloud_to_laserscan/include/**",
+        "/home/rm/Karl_ws_6.13/src/sentry_serial/include/**",
+        "/home/rm/Karl_ws_6.13/src/Tools/velocity_smoother_ema/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

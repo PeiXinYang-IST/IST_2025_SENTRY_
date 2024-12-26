@@ -1,0 +1,3 @@
+clear_z: -0.2   #雷达基座以下
+clear_x: 0.50  
+clear_y: 0.30

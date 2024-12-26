@@ -1,0 +1,7 @@
+<?xml version='1.0'?>
+<sdf version='1.7'>
+  <model name='3v3'>
+    <pose>0 0 0 0 -0 0</pose>
+    <static>1</static>
+  </model>
+</sdf>

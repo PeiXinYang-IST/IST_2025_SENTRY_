@@ -1,0 +1,35 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/rm/RM_IST_2025_2024.6.5/RM_2024/ws_livox_12.14/devel/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/Tools/direct_lidar_odometry/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/Tools/eband_local_planner/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/FAST_LIO/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/FAST_LIO_LOCALIZATION/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/faster-lio/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/Tools/linefit_ground_segmentation/linefit_ground_segmentation/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/Tools/pointcloud_to_laserscan/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/sentry_behavior/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/sentry_decision/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/sentry_nav/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/sentry_serial/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/Tools/teb_local_planner/include/**",
+        "/home/rm/rm_sentry_2024/ws_livox_12.14/src/Tools/velocity_smoother_ema/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

@@ -1,0 +1,11 @@
+
+find_min_angle: 9 #寻优最小角度设置 180/find_min_angle
+min_get_score: 0.05 #最小获取寻优过程中增加的分数最小容忍度
+big_jump_yaw_score: 0.05 #在寻优过程中进行的大幅度跳跃分数阈值
+small_jump_yaw_score: 0.015 #在寻优过程中进行的小幅度跳跃分数阈值
+find_best_yaw_icp_Iterations: 15 #寻优过程中迭代次数
+icp_Iterations: 40 #正常icp最大迭代次数
+re_icp_score: 0.5 #重新进行重定位条件
+save_lidar_times: 3 #保存实时雷达点云次数
+remove_cloud_length: 0.05 #初始移除雷达点云距离阈值 
+icp_correct: 0.3

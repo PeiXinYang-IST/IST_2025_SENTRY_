@@ -1,0 +1,66 @@
+『1』 上三   Setting goal: Frame:map, Position(-1.061, -1.141, 0.000), Orientation(0.000, 0.000, 0.039, 0.999) = Angle: 0.079
+『2』 上二   Setting goal: Frame:map, Position(-2.667, -3.356, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『3』 上一   Setting goal: Frame:map, Position(-0.622, -5.781, 0.000), Orientation(0.000, 0.000, -0.105, 0.994) = Angle: -0.211
+『4』 中一   Setting goal: Frame:map, Position(1.726, -5.785, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『5』 中二   Setting goal: Frame:map, Position(1.366, -3.350, 0.000), Orientation(0.000, 0.000, -0.088, 0.996) = Angle: -0.177
+『6』 中三   Setting goal: Frame:map, Position(1.096, -0.966, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『7』 下一   Setting goal: Frame:map, Position(3.598, -5.903, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『8』 下二   Setting goal: Frame:map, Position(5.761, -3.379, 0.000), Orientation(0.000, 0.000, 0.219, 0.976) = Angle: 0.442
+『9』 下三   Setting goal: Frame:map, Position(3.037, -1.014, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『10』 右上   Setting goal: Frame:map, Position(-3.407, -1.046, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『11』 左上   Setting goal: Frame:map, Position(-3.212, -5.912, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『12』 左下   Setting goal: Frame:map, Position(6.736, -5.912, 0.000), Orientation(0.000, 0.000, -0.082, 0.997) = Angle: -0.165
+『13』 右下   Setting goal: Frame:map, Position(6.806, -0.916, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『14』 右下   Setting goal: Frame:map, Position(6.806, -0.916, 0.000), Orientation(0.000, 0.000, 0.000, 1.000) = Angle: 0.000
+『14』 上右   Setting goal: Frame:map, Position(-2.497, -1.042, 0.000), Orientation(0.000, 0.000, 0.682, 0.731) = Angle: 1.502
+『15』       Setting goal: Frame:map, Position(5.630, -5.636, 0.000), Orientation(0.000, 0.000, -0.673, 0.739) = Angle: -1.478
+『16』       Setting goal: Frame:map, Position(6.651, -3.653, 0.000), Orientation(0.000, 0.000, 0.700, 0.714) = Angle: 1.552
+
+//////////////////////////////////////
+// 『11』                     『10』 //
+//                                  //
+//              『2』                //
+//                           『14』  //
+//   『3』   ////                    //
+//             ////                 //
+//                 ////             //
+//                     ////  『1』  //
+//                                  //
+//  『4』        『5』               //
+//                                  //
+//                            『6』  //
+//  『7』 ////                       //
+//            ////                  //
+//                 ////             //
+//                     ////         //
+//   『15』                   『9』  //
+//             『8』                //  
+//                                  //
+//                                  //
+// 『12』       『16』        『13』  //
+//////////////////////////////////////
+
+
+7v7
+
+『1』 Setting goal: Frame:map, Position(7.413, 5.873, 0.000), Orientation(0.000, 0.000, 0.705, 0.709) = Angle: 1.565
+『2』 Setting goal: Frame:map, Position(10.574, 8.712, 0.000), Orientation(0.000, 0.000, 0.575, 0.818) = Angle: 1.224
+『3』 Setting goal: Frame:map, Position(3.572, 8.419, 0.000), Orientation(0.000, 0.000, 0.965, 0.261) = Angle: 2.613
+『4』 Setting goal: Frame:map, Position(1.841, 9.794, 0.000), Orientation(0.000, 0.000, 0.914, 0.407) = Angle: 2.304
+『5』 Setting goal: Frame:map, Position(11.666, 9.827, 0.000), Orientation(0.000, 0.000, 0.617, 0.787) = Angle: 1.329
+『6』 Setting goal: Frame:map, Position(10.249, 2.959, 0.000), Orientation(0.000, 0.000, -0.261, 0.965) = Angle: -0.528
+『7』 Setting goal: Frame:map, Position(3.472, 3.155, 0.000), Orientation(0.000, 0.000, -0.966, 0.259) = Angle: -2.618
+『8』 Setting goal: Frame:map, Position(11.791, 13.232, 0.000), Orientation(0.000, 0.000, 0.729, 0.684) = Angle: 1.635
+『9』 Setting goal: Frame:map, Position(10.266, 13.840, 0.000), Orientation(0.000, 0.000, 0.887, 0.462) = Angle: 2.182
+『10』 Setting goal: Frame:map, Position(7.293, 11.793, 0.000), Orientation(0.000, 0.000, 0.997, 0.083) = Angle: 2.975
+『11』 Setting goal: Frame:map, Position(7.843, 16.136, 0.000), Orientation(0.000, 0.000, -1.000, 0.020) = Angle: -3.101
+『12』 Setting goal: Frame:map, Position(4.229, 14.377, 0.000), Orientation(0.000, 0.000, 0.794, 0.608) = Angle: 1.834
+『13』 Setting goal: Frame:map, Position(2.557, 16.344, 0.000), Orientation(0.000, 0.000, 0.747, 0.665) = Angle: 1.688
+『14』 Setting goal: Frame:map, Position(3.308, 17.697, 0.000), Orientation(0.000, 0.000, 0.676, 0.737) = Angle: 1.485
+『15』 Setting goal: Frame:map, Position(4.518, 19.295, 0.000), Orientation(0.000, 0.000, 0.419, 0.908) = Angle: 0.865
+『16』 Setting goal: Frame:map, Position(7.982, 20.364, 0.000), Orientation(0.000, 0.000, 0.041, 0.999) = Angle: 0.083
+『17』 Setting goal: Frame:map, Position(10.365, 20.025, 0.000), Orientation(0.000, 0.000, -0.370, 0.929) = Angle: -0.759
+『18』 Setting goal: Frame:map, Position(13.069, 17.983, 0.000), Orientation(0.000, 0.000, -0.402, 0.916) = Angle: -0.827
+『19』 Setting goal: Frame:map, Position(7.551, 22.791, 0.000), Orientation(0.000, 0.000, 0.743, 0.670) = Angle: 1.674
+『20』 Setting goal: Frame:map, Position(5.489, 24.585, 0.000), Orientation(0.000, 0.000, 0.947, 0.321) = Angle: 2.488
+『21』 Setting goal: Frame:map, Position(9.630, 24.650, 0.000), Orientation(0.000, 0.000, 0.452, 0.892) = Angle: 0.938

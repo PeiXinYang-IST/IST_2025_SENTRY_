@@ -1,0 +1,19 @@
+<launch>
+	<arg name="rviz" default="true" />
+    <node pkg="octomap_server" type = "octomap_server_node" name="octomap_server">
+
+        <param name ="resolution" value="0.05" />
+        <param name = "frame_id" type="str" value="odom" />
+        <param name = "sensor_model/max_range" value="1000.0" />
+        <param name = "latch" value="true" />
+        <param name = "pointcloud_max_z" value="0.70" />
+        <param name = "pointcloud_min_z" value="0.10" />
+
+        <remap from ="cloud_in" to="/point_cloud_map" />
+    </node>
+
+    <group if="$(arg rviz)">
+	<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/mpc_track_fastplanner/src/omni_robot/config/sim_build_map.rviz" />
+	</group>
+
+</launch>

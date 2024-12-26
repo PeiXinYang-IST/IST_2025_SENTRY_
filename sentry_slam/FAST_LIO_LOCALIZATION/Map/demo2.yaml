@@ -1,0 +1,7 @@
+image: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/Map/demo2.pgm
+resolution: 0.050000
+origin: [-2.100000, -3.950000, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+

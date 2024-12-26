@@ -1,0 +1,228 @@
+# EBandPlannerROS:
+#   xy_goal_tolerance: 0.2
+#   #Distance tolerance for reaching the goal pose 
+#   yaw_goal_tolerance: 6.28 #0.05
+#   #Orientation tolerance for reaching the desired goal pose 
+#   rot_stopped_vel: 0.01
+#   #Angular velocity lower bound that determines if the robot should stop to avoid limit-cycles or locks 
+#   trans_stopped_vel: 0.01
+#   #Linear velocity lower bound that determines if the robot should stop to avoid limit-cycles or locks 
+
+# #Visualization Parameters
+#   marker_lifetime: 0.5
+#   #Lifetime of eband visualization markers 
+
+# #Elastic Band Parameters
+#   eband_min_relative_overlap: 0.7
+#   #Min distance that denotes connectivity between consecutive bubbles 
+#   eband_tiny_bubble_distance: 0.01
+#   #Bubble geometric bound regarding tiny bubble distance 
+#   eband_tiny_bubble_expansion: 0.01
+#   #Bubble geometric bound regarding tiny bubble expansion 
+#   eband_internal_force_gain: 1.0
+#   #Force gain of forces between consecutive bubbles that tend to stretch the elastic band 
+#   eband_external_force_gain: 2.0
+#   #Force gain of forces that tend to move the bubbles away from obstacles 
+#   num_iterations_eband_optimization: 4 #3
+#   #Number of iterations for eband optimization 
+#   eband_equilibrium_approx_max_recursion_depth: 4
+#   #Number of iterations for reaching the equilibrium between internal and external forces 
+#   eband_equilibrium_relative_overshoot: 0.75
+#   #Maximum relative equlibrium overshoot 
+#   eband_significant_force_lower_bound: 0.15
+#   #Minimum magnitude of force that is considered significant and used in the calculations 
+#   costmap_weight: 15.0 #10.0
+#   #Costmap weight factor used in the calculation of distance to obstacles 
+
+# #Trajectory Controller Parameters
+#   max_vel_lin: 1.6 #1.8
+#   #Maximum linear velocity 
+#   max_vel_th: 1.57 #3.14
+#   #Maximum angular velocity 
+#   min_vel_lin: 0.1
+#     #Minimum linear velocity 
+#   min_vel_th: 0.0
+#     #inimum angular velocity 
+#   min_in_place_vel_th: 0 ##0.05
+#     #Minimum in-place angular velocity 
+#   in_place_trans_vel: 0 ##0.05
+#     #Minimum in place linear velocity 
+#   k_prop: 30.0 #10.0
+#     #Proportional gain of the PID controller 
+#   k_damp: 8.0 #7.0
+#     #Damping gain of the PID controller 
+#   Ctrl_Rate: 20
+#     #Control rate 
+#   max_acceleration: 3.0
+#     #Maximum allowable acceleration 
+#   virtual_mass: 0.75
+#     #Virtual mass 
+#   max_translational_acceleration: 1.6
+#     #Maximum linear acceleration 
+#   max_rotational_acceleration: 1.57
+#     #Maximum angular acceleration   
+#   rotation_correction_threshold: 0.0
+#     #Rotation correction threshold 
+#   differential_drive: False
+#     #Denotes whether to use the differential drive mode 
+#   bubble_velocity_multiplier: 3.0 #2.0
+#     #Multiplier of bubble radius 
+#   rotation_threshold_multiplier: 1.5 #1.0
+#     #Multiplier of rotation threshold 
+#   disallow_hysteresis: True
+    #Determines whether to try getting closer to the goal, in case of going past the tolerance 
+
+
+# EBandPlannerROS:
+#   xy_goal_tolerance: 0.4 #0.2
+#   # 达到目标位姿的位置容差
+#   yaw_goal_tolerance: 0.01 #6.28 #0.05
+#   # 达到期望目标位姿的方向容差
+#   rot_stopped_vel: 0.01
+#   # 角速度下限，用于确定机器人是否应该停止，以避免极限循环或锁定
+#   trans_stopped_vel: 0.01
+#   # 线速度下限，用于确定机器人是否应该停止，以避免极限循环或锁定
+
+# # 可视化参数
+#   marker_lifetime: 0.5
+#   # eband可视化标记的生存时间
+
+# # 弹性带参数
+#   eband_min_relative_overlap: 0.7
+#   # 表示相邻气泡之间连接的最小距离
+#   eband_tiny_bubble_distance: 0.01
+#   # 关于微小气泡距离的气泡几何界限
+#   eband_tiny_bubble_expansion: 0.01
+#   # 关于微小气泡扩展的气泡几何界限
+#   eband_internal_force_gain: 1.0
+#   # 相邻气泡之间拉伸弹性带的力量增益
+#   eband_external_force_gain: 2.0
+#   # 使气泡远离障碍物的力量增益
+#   num_iterations_eband_optimization: 4 #3
+#   # eband优化的迭代次数
+#   eband_equilibrium_approx_max_recursion_depth: 4
+#   # 达到内部和外部力平衡的迭代次数
+#   eband_equilibrium_relative_overshoot: 0.75
+#   # 最大相对平衡过冲
+#   eband_significant_force_lower_bound: 0.15
+#   # 被认为是显著的力量的最小大小，并用于计算
+#   costmap_weight: 15.0 #10.0
+#   # 用于计算到障碍物距离的成本图权重因子
+
+# # 轨迹控制器参数
+#   max_vel_lin: 1.6 #1.8
+#   # 最大线速度
+#   max_vel_th: 0.1 #3.14
+#   # 最大角速度
+#   min_vel_lin: 0.1
+#     # 最小线速度
+#   min_vel_th: 0.0
+#     # 最小角速度
+#   min_in_place_vel_th: 0 ##0.05
+#     # 最小原地角速度
+#   in_place_trans_vel: 0 ##0.05
+#     # 最小原地线速度
+#   k_prop: 30.0 #10.0
+#     # PID控制器的比例增益
+#   k_damp: 8.0 #7.0
+#     # PID控制器的阻尼增益
+#   Ctrl_Rate: 20
+#     # 控制频率
+#   max_acceleration: 3.0
+#     # 最大允许加速度
+#   virtual_mass: 0.75
+#     # 虚拟质量
+#   max_translational_acceleration: 1.0 #1.6
+#     # 最大线性加速度
+#   max_rotational_acceleration: 0.2
+#     # 最大角加速度   
+#   rotation_correction_threshold: 0.0
+#     # 旋转校正阈值
+#   differential_drive: False
+#     # 是否使用差分驱动模式
+#   bubble_velocity_multiplier: 3.0 #2.0
+#     # 气泡半径的乘法器
+#   rotation_threshold_multiplier: 1.5 #1.0
+#     # 旋转阈值的乘法器
+#   disallow_hysteresis: True
+#     # 确定是否在超出容差时尝试靠近目标
+
+EBandPlannerROS:
+  xy_goal_tolerance: 0.2
+  #Distance tolerance for reaching the goal pose 
+  yaw_goal_tolerance: 6.28 #0.05
+  #Orientation tolerance for reaching the desired goal pose 
+  rot_stopped_vel: 0.01
+  #Angular velocity lower bound that determines if the robot should stop to avoid limit-cycles or locks 
+  trans_stopped_vel: 0.01
+  #Linear velocity lower bound that determines if the robot should stop to avoid limit-cycles or locks 
+
+#Visualization Parameters
+  marker_lifetime: 0.5
+  #Lifetime of eband visualization markers 
+
+#Elastic Band Parameters
+  eband_min_relative_overlap: 0.7
+  #Min distance that denotes connectivity between consecutive bubbles 
+  eband_tiny_bubble_distance: 0.01
+  #Bubble geometric bound regarding tiny bubble distance 
+  eband_tiny_bubble_expansion: 0.01
+  #Bubble geometric bound regarding tiny bubble expansion 
+  eband_internal_force_gain: 1.0
+  #Force gain of forces between consecutive bubbles that tend to stretch the elastic band 
+  eband_external_force_gain: 2.0
+  #Force gain of forces that tend to move the bubbles away from obstacles 
+  num_iterations_eband_optimization: 4 #3
+  #Number of iterations for eband optimization 
+  eband_equilibrium_approx_max_recursion_depth: 4
+  #Number of iterations for reaching the equilibrium between internal and external forces 
+  eband_equilibrium_relative_overshoot: 0.75
+  #Maximum relative equlibrium overshoot 
+  eband_significant_force_lower_bound: 0.15
+  #Minimum magnitude of force that is considered significant and used in the calculations 
+  costmap_weight: 15.0 #10.0
+  #Costmap weight factor used in the calculation of distance to obstacles 
+
+#Trajectory Controller Parameters
+  max_vel_lin: 1.6 #1.8
+  #Maximum linear velocity 
+  max_vel_th: 1.57 #3.14
+  #Maximum angular velocity 
+  min_vel_lin: 0.1
+    #Minimum linear velocity 
+  min_vel_th: 0.0
+    #inimum angular velocity 
+  min_in_place_vel_th: 0 ##0.05
+    #Minimum in-place angular velocity 
+  in_place_trans_vel: 0 ##0.05
+    #Minimum in place linear velocity 
+  k_prop: 30.0 #10.0
+    #Proportional gain of the PID controller 
+  k_damp: 8.0 #7.0
+    #Damping gain of the PID controller 
+  Ctrl_Rate: 20
+    #Control rate 
+  max_acceleration: 3.0
+    #Maximum allowable acceleration 
+  virtual_mass: 0.75
+    #Virtual mass 
+  max_translational_acceleration: 1.6
+    #Maximum linear acceleration 
+  max_rotational_acceleration: 1.57
+    #Maximum angular acceleration   
+  rotation_correction_threshold: 0.0
+    #Rotation correction threshold 
+  differential_drive: False
+    #Denotes whether to use the differential drive mode 
+  bubble_velocity_multiplier: 3.0 #2.0
+    #Multiplier of bubble radius 
+  rotation_threshold_multiplier: 1.5 #1.0
+    #Multiplier of rotation threshold 
+  disallow_hysteresis: True
+    #Determines whether to try getting closer to the goal, in case of going past the tolerance 
+
+
+
+
+
+

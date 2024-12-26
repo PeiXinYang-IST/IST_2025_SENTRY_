@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/devel/setup.sh

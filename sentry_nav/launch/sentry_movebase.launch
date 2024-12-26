@@ -1,0 +1,53 @@
+<launch>
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base1" output="screen" clear_params="true" args="/map:=prior_map /odom:=odom">
+        <param name="planner_frequency" value="10.0" />
+        <param name="planner_patience" value="10.0" />
+        <param name="use_dijkstra" value="true" />
+        <param name="cost_factor" value="5.0" />
+        <!-- <rosparam file="$(find sentry_nav)/param/move_base_params.yaml" command="load" /> -->
+        <rosparam file="$(find sentry_nav)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
+        <rosparam file="$(find sentry_nav)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
+        <rosparam file="$(find sentry_nav)/param/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find sentry_nav)/param/global_costmap_params.yaml" command="load" />
+        <!-- <rosparam file="$(find sentry_nav)/param/teb_local_planner_params.yaml" command="load" /> -->
+
+	    <!-- <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
+        <param name="controller_frequency" value="10" />
+        <param name="controller_patience" value="0.1" />
+        <param name="clearing_rotation_allowed" value="false" /> -->
+        <!-- <rosparam file="$(find sentry_nav)/param/mpc_local_planner.yaml" command="load" />
+        <param name="base_local_planner" value="mpc_local_planner/MpcLocalPlannerROS" /> -->
+</node>
+
+    <!-- <node pkg="sentry_nav" type="trans_tf_2d" name="trans_tF_2d" >
+    <param name="controller_frequency" value="50" />
+    <param name="controller_patiente" value="50.0"/>
+    <param name="clearing_rotation_allowed" value="true" />
+    </node> -->
+
+    <!-- icp重定位初始化后清除原位置全局代价地图 -->
+    <node pkg="sentry_nav" type="icp_costmap_clear" name="icp_costmap_clear" /> 
+    <!-- <node pkg="sentry_nav" type="pid_follow" name="pid_follow" output="screen" respawn="true" >
+    <param name = "max_speed" value = "2.0" />
+    <param name = "pid_p" value = "0.36" />
+    <param name = "pid_i" value = "0.1" />
+    <param name = "pid_d" value = "1.0" />
+    <param name = "i_max_" value = "0.10" />
+    <param name = "set_yaw_speed" value = "0.7" />
+    <param name = "goal_dist_tolerance" value = "0.70" />
+    <param name = "far_goal_dist_tolerance" value = "0.7"/>
+    <param name = "far_far_goal_dist_tolerance" value = "1.0"/>
+    <param name = "alpha" value = "0.2"/>
+    <param name = "set_max_yaw_speed_" value = "1.0"/>
+    </node> -->
+
+    <node pkg="sentry_nav" type="global_to_local" name="global_to_local"/>
+
+    <!-- <node pkg="sentry_nav" type="APF_hide_obstacle" name="APF_hide_obstacle" />  -->
+
+    <!-- <node pkg="sentry_nav" type="trans_tf_2d_odom" name="trans_tF_2d_odom" />
+    <node pkg="sentry_nav" type="trans_odom_2d" name="trans_odom_2d" /> -->
+	<!-- <include file="$(find velocity_smoother_ema)/launch/velocity_smoother_ema.launch"> -->
+	<!-- </include> -->
+    
+</launch>

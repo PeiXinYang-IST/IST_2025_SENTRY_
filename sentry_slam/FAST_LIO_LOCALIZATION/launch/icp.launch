@@ -1,0 +1,5 @@
+<launch>
+<node pkg="fast_lio_localization" type="MY_ICP" name="MY_ICP" output="screen" >
+        <rosparam file="$(find fast_lio_localization)/config/icp_relocalization.yaml" command="load"/>
+</node>
+</launch>

@@ -1,0 +1,15 @@
+<launch>	
+
+	<arg name="rviz" default="true" />
+    <node name = "map_server" pkg = "map_server" type = "map_server" args="/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/mpc_track_fastplanner/src/omni_robot/Map/7v7.yaml /map:=prior_map" respawn="true" >
+    <!-- <node name = "map_server" pkg = "map_server" type = "map_server" args="/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/mpc_track_fastplanner/src/omni_robot/Map/7v7.yaml /map:=prior_map" respawn="true" > -->
+	<param name = "frame_id" value="odom" />
+</node>
+
+    <group if="$(arg rviz)">
+	<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/mpc_track_fastplanner/src/omni_robot/config/sim_nav.rviz" />
+	</group>
+
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_1" args="0 0 0 0 0 0 odom map" /> -->
+
+</launch>

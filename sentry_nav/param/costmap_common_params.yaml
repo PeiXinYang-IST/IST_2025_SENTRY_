@@ -1,0 +1,31 @@
+#机器人几何参，如果机器人是圆形，设置 robot_radius,如果是其他形状设置 footprint
+robot_radius: 0.30 #圆形
+# footprint: [[-0.12, -0.12], [-0.12, 0.12], [0.12, 0.12], [0.12, -0.12]] #其他形状
+
+obstacle_layer:
+ enabled: true
+ obstacle_range: 5.0
+ raytrace_range: 5.5
+ combination_method: 1
+ rolling_window: true #是否使用动态窗口，默认为false，在静态的全局地图中，地图不会变化
+inflation_layer:
+  enabled:              true
+  cost_scaling_factor:  5.0  # exponential rate at which the obstacle cost drops off (default: 10)
+  inflation_radius:    0.2  # max. distance from an obstacle at which costs are incurred for planning paths.
+ 
+#  observation_sources: pointcloud2_sensor
+#  pointcloud2_sensor: {data_type: PointCloud2, topic: /cloud_registered, marking: true, clearing: true}
+
+# 1.0
+static_layer:
+  enabled:              true
+  map_topic:            "/map"
+
+
+#地图类型
+map_type: costmap
+#导航包所需要的传感器
+observation_sources: scan
+#对传感器的坐标系和数据进行配置。这个也会用于代价地图添加和清除障碍物。例如，你可以用激光雷达传感器用于在代价地图添加障碍物，再添加kinect用于导航和清除障碍物。
+#sensor_frame should be your own frame in tftree
+scan: {sensor_frame: body_foot, data_type: LaserScan, topic: /scan, marking: true, clearing: true}

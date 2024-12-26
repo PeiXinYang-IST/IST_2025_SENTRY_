@@ -1,0 +1,15 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/rm/Karl_ws_6.13/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/rm/Karl_ws_6.13/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ],
+    "cmake.sourceDirectory": "/home/rm/catkin_livox_ros_driver2/src/mpc_track_fastplanner/src/lidar2world",
+    "files.associations": {
+        "variant": "cpp",
+        "random": "cpp"
+    }
+}

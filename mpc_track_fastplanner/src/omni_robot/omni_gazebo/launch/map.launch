@@ -1,0 +1,11 @@
+<launch>
+  <arg name="scan" default="scan" />
+  <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen" clear_params="true">
+    <param name="odom" value="/imu/data"/>
+    <param name="map_update_interval" value="5.0"/>
+    <param name="maxRange" value="5.0"/>
+    <param name="maxUrange" value="4.5"/>
+    <!-- 其他参数 -->
+    <remap from="scan" to="/scan"/>
+  </node>
+</launch>
