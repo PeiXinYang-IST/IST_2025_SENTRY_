@@ -23,9 +23,9 @@
 
     <!-- topic of point cloud measurement, such as from LIDAR  -->
     <!-- don't set camera pose and depth, if you already set this one! -->
-    <arg name="cloud_topic" value="/Obstacle_cloudget/world_obstacle_cloud"/>  
+    <arg name="cloud_topic" value="/sim_Obstacle_map_cloud/world_obstacle_cloud"/>  
     <!-- /sim_Obstacle_map_cloud/world_obstacle_cloud -->
-
+<!-- /Obstacle_cloudget/world_obstacle_cloud -->
     <!-- intrinsic params of the depth camera -->
     <arg name="cx" value="322.276672363281"/>
     <arg name="cy" value="237.459991455078"/>
@@ -33,8 +33,8 @@
     <arg name="fy" value="381.415405273438"/>
 
     <!-- maximum velocity and acceleration the drone will reach -->
-    <arg name="max_vel" value="1.5" />
-    <arg name="max_acc" value="1.5" />
+    <arg name="max_vel" value="3" />
+    <arg name="max_acc" value="3" />
 
     <!-- 1: use 2D Nav Goal to select goal  -->
     <!-- 2: use global waypoints below  -->
@@ -73,8 +73,9 @@
 
   <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="screen">
     <remap from="~odom" to="odom"/>        
-    <remap from="~goal" to="/goal_pose"/>
-    <!-- /Graph/nav_pose   /move_base_simple/goal-->
+    <remap from="~goal" to="/move_base_simple/goal"/>
+    <!-- /Graph/nav_pose   /move_base_simple/goal-->  
+    <!-- goal_pose -->
     <remap from="~traj_start_trigger" to="/traj_start_trigger" />
     <param name="waypoint_type" value="manual-lonely-waypoint"/>    
   </node>  

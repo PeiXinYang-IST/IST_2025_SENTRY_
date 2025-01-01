@@ -103,7 +103,7 @@ void sim_Obstacle_map_cloud::main_thread()
         *map_yaml_cloud_ = *world_Obstacle_cloud_+*point_cloud_map_;
         pcl::toROSMsg(*map_yaml_cloud_, world_obstacle_msg);
         world_obstacle_msg.header.stamp = ros::Time::now();
-        world_obstacle_msg.header.frame_id = "map";  // 坐标系
+        world_obstacle_msg.header.frame_id = "odom";  // 坐标系
         world_Obstacle_pub_.publish(world_obstacle_msg);
         rate.sleep();
     }

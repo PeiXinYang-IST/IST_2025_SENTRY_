@@ -80,6 +80,7 @@ private:
     sensor_msgs::PointCloud2 rotated_lidar_map_msg;
     sensor_msgs::PointCloud2 incoming_cloud_msg;
     sensor_msgs::PointCloud2 transformed_cloud_msg_; //转换之后的点云msg
+    sensor_msgs::PointCloud2 global_pointcloud_msg_; //转换之后的点云msg
     sensor_msgs::PointCloud2 cloud_removed_msg;
     sensor_msgs::PointCloud2 local_pointcloud_msg;
     std_msgs::Bool move_base_start_msg;
@@ -96,6 +97,7 @@ private:
     float icp_correct;
     float local_pointcloud_x_;
     float local_pointcloud_y_;
+    float local_pointcloud_z_;
     bool need_relocalization; //如果需要进行重定位，则为true
     bool start_find;
     bool find_times;

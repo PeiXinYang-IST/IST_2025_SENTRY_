@@ -68,7 +68,7 @@
     <param name="sdf_map/local_update_range_x"  value="30.0" /> 
     <param name="sdf_map/local_update_range_y"  value="30.0" /> 
     <param name="sdf_map/local_update_range_z"  value="0.1" /> 
-    <param name="sdf_map/obstacles_inflation"     value="0.15" /> <!--<膨胀的半径  单位米>-->
+    <param name="sdf_map/obstacles_inflation"     value="0.10" /> <!--<膨胀的半径  单位米>-->
     <param name="sdf_map/local_bound_inflate"    value="0.25"/>
     <param name="sdf_map/local_map_margin" value="50"/>
     <param name="sdf_map/ground_height"        value="0"/><!--地面高度-->

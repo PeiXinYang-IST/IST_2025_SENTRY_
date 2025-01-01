@@ -29,7 +29,7 @@ MY_ICP::MY_ICP() : nh_("~"), private_node_("~"),
     local_pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("local_cloud",1);
     icp_pub_ = nh_.advertise<std_msgs::Float32>("icp", 5);
     map_sub_ = nh_.subscribe("/map", 1, &MY_ICP::mappointCloudCallback, this);    
-    odom_sub_ = nh_.subscribe("Odometry", 1, &MY_ICP::odomCallback, this);
+    odom_sub_ = nh_.subscribe("/odom", 1, &MY_ICP::odomCallback, this);
     // 启动发布线程
     publishThread_ = std::thread(&MY_ICP::publish_map_msg_thread, this);
 }
@@ -56,16 +56,16 @@ void MY_ICP::odomCallback(const nav_msgs::Odometry::ConstPtr& odom_msg) {
     clear_distance_x = radar_position[0];
     clear_distance_y = radar_position[1];
     clear_distance_z = radar_position[2];
-
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_local(new pcl::PointCloud<pcl::PointXYZ>);
     static bool cut_first_ = false;
-
+    
     //两次更新局部点云之间里程计给定1.5m偏差
     if(calculateDistance(radar_position,last_radar_position)>1.5 || !cut_first_)
     {
         last_radar_position = radar_position;
         cloud_local = prior_map_deal(prior_map_);
         gicp.setInputTarget(cloud_local);   
+        ROS_INFO("GET LOCAL CLOUD");
         finish_cut_cloud_ = true; 
         cut_first_ = true;
     }
@@ -97,47 +97,28 @@ void MY_ICP::Initparams()
     private_node_.param<float>("icp_correct",icp_correct,0.10); //icp纠正的分数匹配阈值
     private_node_.param<float>("local_pointcloud_x",local_pointcloud_x_,0.10); //局部点云地图x
     private_node_.param<float>("local_pointcloud_y",local_pointcloud_y_,0.10); //局部点云地图y
-
+    private_node_.param<float>("local_pointcloud_z",local_pointcloud_z_,0.10); //局部点云地图y
     // gicp.setInputTarget(prior_map_);
     // ndt.setInputTarget(prior_map_);
-
 }
 
 //对全局先验地图进行局部点云分割，根据估计位置分割出局部点云进行icp配准
 pcl::PointCloud<pcl::PointXYZ>::Ptr MY_ICP::prior_map_deal(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_cloud)
 {
-    pcl::PassThrough<pcl::PointXYZ> pass;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_cylinder(new pcl::PointCloud<pcl::PointXYZ>);
-
-    pass.setInputCloud(input_cloud);
-    pass.setFilterFieldName("x");
-    pass.setFilterLimits(clear_distance_x-local_pointcloud_x_, clear_distance_x+local_pointcloud_x_); // x轴半径限制
-    pass.filter(*cloud_filtered_cylinder);
-
-    pass.setInputCloud(cloud_filtered_cylinder);
-    pass.setFilterFieldName("y");
-    pass.setFilterLimits(clear_distance_y-local_pointcloud_y_, clear_distance_y+local_pointcloud_y_); // y轴半径限制
-    pass.filter(*cloud_filtered_cylinder);
-
+    pcl::PointCloud<pcl::PointXYZ>::Ptr global_cloud_(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_local(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::toROSMsg(*input_cloud, global_pointcloud_msg_);
+    global_pointcloud_msg_.header.frame_id = "odom";
+    global_pointcloud_msg_.header.stamp = ros::Time::now();
+    pcl::fromROSMsg(global_pointcloud_msg_, *global_cloud_);   
 
-    std::vector<int> indices_to_remove;
-
-    for (size_t i = 0; i < cloud_filtered_cylinder->points.size(); ++i) {
-        // 查找原始点云中与滤波后的点相匹配的点，并标记它们的索引
-        pcl::PointXYZ point = cloud_filtered_cylinder->points[i];
-            for (size_t j = 0; j < input_cloud->points.size(); ++j) {
-            if (input_cloud->points[j].x == point.x &&
-            input_cloud->points[j].y == point.y &&
-            input_cloud->points[j].z == point.z) {
-            indices_to_remove.push_back(j); // 记录该点的索引
-            }
-        }
-    }
-
-    // 从原始点云中删除这些点
-    for (size_t i = 0; i < input_cloud->points.size(); ++i) {
-        if (std::find(indices_to_remove.begin(), indices_to_remove.end(), i) == indices_to_remove.end()) {
+    for(int i=0;i<input_cloud->size();i++)
+    {
+        if(input_cloud->points[i].x < fabs(local_pointcloud_x_+radar_position.x()) && 
+        input_cloud->points[i].y < fabs(local_pointcloud_y_+radar_position.y()) &&
+        input_cloud->points[i].z < local_pointcloud_z_)
+        {
+            // ROS_INFO("input_cloud : X:%f Y:%f Z:%f",input_cloud->points[i].x,input_cloud->points[i].y,input_cloud->points[i].z);
             cloud_filtered_local->points.push_back(input_cloud->points[i]);
         }
     }
@@ -308,7 +289,6 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
     Eigen::Matrix4f current_transform = 
     transform.isApprox(Eigen::Matrix4f::Identity()) ? initial_pose : transform;
 
-    // gicp.align(aligned,current_transform); // 使用初始估计
     gicp.align(aligned,current_transform); // 使用初始估计
 
     ros::Time end_time=ros::Time::now();

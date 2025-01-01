@@ -22,8 +22,8 @@ rosrun fast_lio_localization sim_obstacle_map_cloud &
 
 sleep 1
 
-# roslaunch plan_manage topo_replan.launch &
-roslaunch plan_manage real.launch &
+roslaunch plan_manage topo_replan.launch &
+# roslaunch plan_manage real.launch &
 
 rosrun fast_lio_localization sim_point_cloud_deal
 

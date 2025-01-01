@@ -38,7 +38,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: cur_scan_in_map
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -70,7 +70,7 @@ Visualization Manager:
       Length: 0.699999988079071
       Name: Axes
       Radius: 0.05999999865889549
-      Reference Frame: camera_init
+      Reference Frame: body
       Show Trail: false
       Value: true
     - Class: rviz/Group
@@ -481,7 +481,7 @@ Visualization Manager:
       Size (Pixels): 4
       Size (m): 0.019999999552965164
       Style: Points
-      Topic: /processed_cloud
+      Topic: /MY_ICP/local_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -489,8 +489,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.17499999701976776
-        Min Value: 0.02500000037252903
+        Max Value: -9999
+        Min Value: 9999
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -717,7 +717,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.642716407775879
+      Distance: 11.264772415161133
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -733,9 +733,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7697970271110535
+      Pitch: 0.6247972249984741
       Target Frame: <Fixed Frame>
-      Yaw: 5.804233074188232
+      Yaw: 5.5042338371276855
     Saved: ~
 Window Geometry:
   Displays:

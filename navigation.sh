@@ -38,7 +38,7 @@ restart_nodes() {
 
     sleep 1
 #real
-    roslaunch plan_manage real.launch &
+    roslaunch plan_manage topu.launch &
     PID_FAST_PLANNER=$!
     echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
