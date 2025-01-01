@@ -9,3 +9,5 @@ re_icp_score: 0.5 #重新进行重定位条件
 save_lidar_times: 3 #保存实时雷达点云次数
 remove_cloud_length: 0.05 #初始移除雷达点云距离阈值 
 icp_correct: 0.3
+local_pointcloud_x: 10.0
+local_pointcloud_y: 10.0
