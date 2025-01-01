@@ -13,8 +13,6 @@ Panels:
         - /Odometry1/Odometry1/Covariance1
         - /Odometry1/Odometry1/Covariance1/Position1
         - /Odometry1/Odometry1/Covariance1/Orientation1
-        - /Localization1
-        - /Localization1/cur_scan_in_map1
         - /Localization1/localization1/Shape1
         - /MarkerArray1/Namespaces1
         - /PointCloud21
@@ -491,7 +489,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.02500000037252903
+        Max Value: 0.17499999701976776
         Min Value: 0.02500000037252903
         Value: true
       Axis: Z
@@ -510,7 +508,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.05000000074505806
-      Style: Boxes
+      Style: Flat Squares
       Topic: /sdf_map/occupancy
       Unreliable: false
       Use Fixed Frame: true
@@ -584,7 +582,7 @@ Visualization Manager:
       Color: 0; 255; 0
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -599,7 +597,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 0.699999988079071
       Class: rviz/Map
       Color Scheme: map
@@ -719,7 +717,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 58.6616325378418
+      Distance: 10.642716407775879
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -727,17 +725,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.262964129447937
-        Y: 0.7790881395339966
-        Z: -0.42236045002937317
+        X: -2.540886878967285
+        Y: 1.3131953477859497
+        Z: -1.7693992853164673
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2997970581054688
+      Pitch: 0.7697970271110535
       Target Frame: <Fixed Frame>
-      Yaw: 3.5010604858398438
+      Yaw: 5.804233074188232
     Saved: ~
 Window Geometry:
   Displays:

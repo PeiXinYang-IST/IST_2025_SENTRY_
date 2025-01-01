@@ -38,14 +38,14 @@ restart_nodes() {
 
     sleep 1
 #real
-    # roslaunch plan_manage real.launch &
-    # PID_FAST_PLANNER=$!
-    # echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
+    roslaunch plan_manage real.launch &
+    PID_FAST_PLANNER=$!
+    echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
     # 启动NAV节点
-    # roslaunch sentry_nav sentry_movebase.launch &
-    # PID_NAV=$!
-    # echo "NAV relaunched with PID: $PID_NAV"
+    roslaunch sentry_nav sentry_movebase.launch &
+    PID_NAV=$!
+    echo "NAV relaunched with PID: $PID_NAV"
 
     # 启动Serial节点
     # roslaunch sentry_serial serial.launch &

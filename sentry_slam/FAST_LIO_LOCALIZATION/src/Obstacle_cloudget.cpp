@@ -198,7 +198,7 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     }
     
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_radius(new pcl::PointCloud<pcl::PointXYZ>);
-
+    cloud_filtered_radius->clear();
     //使用半径搜索滤波 去除噪点 
     if(!cloud_removed->empty())
     {

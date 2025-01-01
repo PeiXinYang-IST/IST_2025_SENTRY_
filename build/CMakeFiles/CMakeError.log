@@ -14614,3 +14614,293 @@ make: *** [Makefile:121：cmTC_8a905/fast] 错误 2
 
 
 
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_961f1/fast && /usr/bin/make -f CMakeFiles/cmTC_961f1.dir/build.make CMakeFiles/cmTC_961f1.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_961f1.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_961f1.dir/src.c.o   -c /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_961f1
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_961f1.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_961f1.dir/src.c.o  -o cmTC_961f1 
+/usr/bin/ld: CMakeFiles/cmTC_961f1.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x63): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_961f1.dir/build.make:87：cmTC_961f1] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_961f1/fast] 错误 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_aea4f/fast && /usr/bin/make -f CMakeFiles/cmTC_aea4f.dir/build.make CMakeFiles/cmTC_aea4f.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_aea4f.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_aea4f.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_aea4f
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_aea4f.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_aea4f.dir/CheckFunctionExists.c.o  -o cmTC_aea4f  -lpthreads 
+/usr/bin/ld: 找不到 -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_aea4f.dir/build.make:87：cmTC_aea4f] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_aea4f/fast] 错误 2
+
+
+
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_6bbe4/fast && /usr/bin/make -f CMakeFiles/cmTC_6bbe4.dir/build.make CMakeFiles/cmTC_6bbe4.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_6bbe4.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_6bbe4.dir/src.c.o   -c /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_6bbe4
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6bbe4.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_6bbe4.dir/src.c.o  -o cmTC_6bbe4 
+/usr/bin/ld: CMakeFiles/cmTC_6bbe4.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x63): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_6bbe4.dir/build.make:87：cmTC_6bbe4] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_6bbe4/fast] 错误 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_c92f7/fast && /usr/bin/make -f CMakeFiles/cmTC_c92f7.dir/build.make CMakeFiles/cmTC_c92f7.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_c92f7.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_c92f7.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_c92f7
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c92f7.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_c92f7.dir/CheckFunctionExists.c.o  -o cmTC_c92f7  -lpthreads 
+/usr/bin/ld: 找不到 -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_c92f7.dir/build.make:87：cmTC_c92f7] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_c92f7/fast] 错误 2
+
+
+
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_3b123/fast && /usr/bin/make -f CMakeFiles/cmTC_3b123.dir/build.make CMakeFiles/cmTC_3b123.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_3b123.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_3b123.dir/src.c.o   -c /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_3b123
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3b123.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_3b123.dir/src.c.o  -o cmTC_3b123 
+/usr/bin/ld: CMakeFiles/cmTC_3b123.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x63): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_3b123.dir/build.make:87：cmTC_3b123] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_3b123/fast] 错误 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_2d3fc/fast && /usr/bin/make -f CMakeFiles/cmTC_2d3fc.dir/build.make CMakeFiles/cmTC_2d3fc.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_2d3fc.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_2d3fc.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_2d3fc
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_2d3fc.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_2d3fc.dir/CheckFunctionExists.c.o  -o cmTC_2d3fc  -lpthreads 
+/usr/bin/ld: 找不到 -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_2d3fc.dir/build.make:87：cmTC_2d3fc] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_2d3fc/fast] 错误 2
+
+
+
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_1fd7a/fast && /usr/bin/make -f CMakeFiles/cmTC_1fd7a.dir/build.make CMakeFiles/cmTC_1fd7a.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_1fd7a.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_1fd7a.dir/src.c.o   -c /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_1fd7a
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1fd7a.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_1fd7a.dir/src.c.o  -o cmTC_1fd7a 
+/usr/bin/ld: CMakeFiles/cmTC_1fd7a.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x63): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_1fd7a.dir/build.make:87：cmTC_1fd7a] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_1fd7a/fast] 错误 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_9d118/fast && /usr/bin/make -f CMakeFiles/cmTC_9d118.dir/build.make CMakeFiles/cmTC_9d118.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_9d118.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_9d118.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_9d118
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_9d118.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_9d118.dir/CheckFunctionExists.c.o  -o cmTC_9d118  -lpthreads 
+/usr/bin/ld: 找不到 -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_9d118.dir/build.make:87：cmTC_9d118] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_9d118/fast] 错误 2
+
+
+
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_225f5/fast && /usr/bin/make -f CMakeFiles/cmTC_225f5.dir/build.make CMakeFiles/cmTC_225f5.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_225f5.dir/src.c.o
+/usr/bin/cc   -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_225f5.dir/src.c.o   -c /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_225f5
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_225f5.dir/link.txt --verbose=1
+/usr/bin/cc  -DCMAKE_HAVE_LIBC_PTHREAD    -rdynamic CMakeFiles/cmTC_225f5.dir/src.c.o  -o cmTC_225f5 
+/usr/bin/ld: CMakeFiles/cmTC_225f5.dir/src.c.o: in function `main':
+src.c:(.text+0x46): undefined reference to `pthread_create'
+/usr/bin/ld: src.c:(.text+0x52): undefined reference to `pthread_detach'
+/usr/bin/ld: src.c:(.text+0x63): undefined reference to `pthread_join'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_225f5.dir/build.make:87：cmTC_225f5] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_225f5/fast] 错误 2
+
+
+Source file was:
+#include <pthread.h>
+
+void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_0e09e/fast && /usr/bin/make -f CMakeFiles/cmTC_0e09e.dir/build.make CMakeFiles/cmTC_0e09e.dir/build
+make[1]: 进入目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+Building C object CMakeFiles/cmTC_0e09e.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_0e09e.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_0e09e
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0e09e.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_0e09e.dir/CheckFunctionExists.c.o  -o cmTC_0e09e  -lpthreads 
+/usr/bin/ld: 找不到 -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_0e09e.dir/build.make:87：cmTC_0e09e] 错误 1
+make[1]: 离开目录“/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/build/CMakeFiles/CMakeTmp”
+make: *** [Makefile:121：cmTC_0e09e/fast] 错误 2
+
+
+

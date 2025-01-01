@@ -10,7 +10,7 @@ MY_ICP::MY_ICP() : nh_("~"), private_node_("~"),
                   map_cloud_(new pcl::PointCloud<pcl::PointXYZ>),
                   transformed_cloud_(new pcl::PointCloud<pcl::PointXYZ>),
                   merged_cloud_(new pcl::PointCloud<pcl::PointXYZ>),
-                  icp_start(false),icp_over(false),
+                  icp_start(false),icp_over(false),finish_cut_cloud_(false),
                   transformed(false), saved_PCD(false), need_relocalization(true),
                   find_times(false),restart(false) {
     Initparams();
@@ -26,6 +26,7 @@ MY_ICP::MY_ICP() : nh_("~"), private_node_("~"),
     removal_pointcloud_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>("removed_cloud", 1);
     move_base_start_pub_ = nh_.advertise<std_msgs::Bool>("move_base_start", 5);
     restart_all_pub = nh_.advertise<std_msgs::Bool>("restart", 5);
+    local_pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("local_cloud",1);
     icp_pub_ = nh_.advertise<std_msgs::Float32>("icp", 5);
     map_sub_ = nh_.subscribe("/map", 1, &MY_ICP::mappointCloudCallback, this);    
     odom_sub_ = nh_.subscribe("Odometry", 1, &MY_ICP::odomCallback, this);
@@ -38,16 +39,37 @@ MY_ICP::~MY_ICP() {
 
 }
 
+double calculateDistance(const Eigen::Vector3f& p1, const Eigen::Vector3f& p2) {
+    // 计算两点之间的差值向量
+    Eigen::Vector3f diff = p2 - p1;
+
+    // 返回差值向量的模（即欧几里得距离）
+    return diff.norm();
+}
+
 // 里程计数据的回调函数
 void MY_ICP::odomCallback(const nav_msgs::Odometry::ConstPtr& odom_msg) {
+    static Eigen::Vector3f last_radar_position = Eigen::Vector3f::Identity();
     radar_position = Eigen::Vector3f(odom_msg->pose.pose.position.x,
                                      odom_msg->pose.pose.position.y,
                                      odom_msg->pose.pose.position.z);
     clear_distance_x = radar_position[0];
     clear_distance_y = radar_position[1];
     clear_distance_z = radar_position[2];
-}
 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_local(new pcl::PointCloud<pcl::PointXYZ>);
+    static bool cut_first_ = false;
+
+    //两次更新局部点云之间里程计给定1.5m偏差
+    if(calculateDistance(radar_position,last_radar_position)>1.5 || !cut_first_)
+    {
+        last_radar_position = radar_position;
+        cloud_local = prior_map_deal(prior_map_);
+        gicp.setInputTarget(cloud_local);   
+        finish_cut_cloud_ = true; 
+        cut_first_ = true;
+    }
+}
 
 void MY_ICP::mappointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input)
 {
@@ -73,10 +95,61 @@ void MY_ICP::Initparams()
     private_node_.param<float>("remove_cloud_length",remove_cloud_length,0.1); //移除雷达点云距离阈值
     private_node_.param<float>("clear_icp_global_costmap",clear_icp_global_costmap,5); //清除全局代价地图等待转换次数
     private_node_.param<float>("icp_correct",icp_correct,0.10); //icp纠正的分数匹配阈值
-    gicp.setInputTarget(prior_map_);
-    ndt.setInputTarget(prior_map_);
+    private_node_.param<float>("local_pointcloud_x",local_pointcloud_x_,0.10); //局部点云地图x
+    private_node_.param<float>("local_pointcloud_y",local_pointcloud_y_,0.10); //局部点云地图y
+
+    // gicp.setInputTarget(prior_map_);
+    // ndt.setInputTarget(prior_map_);
+
 }
 
+//对全局先验地图进行局部点云分割，根据估计位置分割出局部点云进行icp配准
+pcl::PointCloud<pcl::PointXYZ>::Ptr MY_ICP::prior_map_deal(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_cloud)
+{
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_cylinder(new pcl::PointCloud<pcl::PointXYZ>);
+
+    pass.setInputCloud(input_cloud);
+    pass.setFilterFieldName("x");
+    pass.setFilterLimits(clear_distance_x-local_pointcloud_x_, clear_distance_x+local_pointcloud_x_); // x轴半径限制
+    pass.filter(*cloud_filtered_cylinder);
+
+    pass.setInputCloud(cloud_filtered_cylinder);
+    pass.setFilterFieldName("y");
+    pass.setFilterLimits(clear_distance_y-local_pointcloud_y_, clear_distance_y+local_pointcloud_y_); // y轴半径限制
+    pass.filter(*cloud_filtered_cylinder);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_local(new pcl::PointCloud<pcl::PointXYZ>);
+
+    std::vector<int> indices_to_remove;
+
+    for (size_t i = 0; i < cloud_filtered_cylinder->points.size(); ++i) {
+        // 查找原始点云中与滤波后的点相匹配的点，并标记它们的索引
+        pcl::PointXYZ point = cloud_filtered_cylinder->points[i];
+            for (size_t j = 0; j < input_cloud->points.size(); ++j) {
+            if (input_cloud->points[j].x == point.x &&
+            input_cloud->points[j].y == point.y &&
+            input_cloud->points[j].z == point.z) {
+            indices_to_remove.push_back(j); // 记录该点的索引
+            }
+        }
+    }
+
+    // 从原始点云中删除这些点
+    for (size_t i = 0; i < input_cloud->points.size(); ++i) {
+        if (std::find(indices_to_remove.begin(), indices_to_remove.end(), i) == indices_to_remove.end()) {
+            cloud_filtered_local->points.push_back(input_cloud->points[i]);
+        }
+    }
+
+    pcl::toROSMsg(*cloud_filtered_local, local_pointcloud_msg);
+    local_pointcloud_msg.header.frame_id = "odom";
+    local_pointcloud_msg.header.stamp = ros::Time::now();
+    local_pointcloud_pub_.publish(local_pointcloud_msg);
+    return cloud_filtered_local;
+}
+
+//阻塞主线程寻优
 void MY_ICP::findBestYawAngle_thread() {
     try {
         std::thread findbestyawThread(&MY_ICP::findBestYawAngle, this);
@@ -96,6 +169,7 @@ void MY_ICP::publish_map_msg()
     restart_all_pub.publish(restart_msg);
     icp_pub_.publish(icp_msg);
 
+    //icp看门狗
     if(++icp_transform_update>=50 && icp_start && need_relocalization)  //其实就是 50/25 = 2s 如果这2s之间icp未更新则说明lio飘飞 重启所有相关节点
     {
         ROS_WARN("ICP CHECK!!!");
@@ -122,11 +196,10 @@ void MY_ICP::publish_map_msg_thread()
     }
 }
 
-
+//获取实时雷达点云 缓存一定次数的集合作为icp的input
 void MY_ICP::get_lidar_cloud()
 {
     static int lidar_collect_times;
-    //存储二十次
     if(lidar_collect_times<=save_lidar_times)
     {
     // 将接收到的点云添加到全局合并后的点云中
@@ -140,7 +213,7 @@ void MY_ICP::get_lidar_cloud()
     // 创建StatisticalOutlierRemoval滤波器对象
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(merged_cloud_);
-    sor.setMeanK(30); // 设置每个点的邻近点数
+    sor.setMeanK(10); // 设置每个点的邻近点数
     sor.setStddevMulThresh(1.0); // 设置标准偏差乘数阈值
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_sor(new pcl::PointCloud<pcl::PointXYZ>);
     sor.filter(*cloud_filtered_sor);
@@ -177,7 +250,7 @@ void MY_ICP::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input) {
     if(!saved_PCD)
     get_lidar_cloud();
 
-    if(saved_PCD)
+    if(saved_PCD && finish_cut_cloud_)
     {
     if(!icp_start)//创建单独寻优线程 仅在初始化时使用寻优
     {

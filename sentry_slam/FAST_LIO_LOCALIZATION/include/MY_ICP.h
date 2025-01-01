@@ -63,6 +63,7 @@ public:
         const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_cloud,
         float distance_threshold);
     void mappointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr prior_map_deal(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_cloud);
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle private_node_;          // ros中的私有句柄,加载参数服务器
@@ -80,6 +81,7 @@ private:
     sensor_msgs::PointCloud2 incoming_cloud_msg;
     sensor_msgs::PointCloud2 transformed_cloud_msg_; //转换之后的点云msg
     sensor_msgs::PointCloud2 cloud_removed_msg;
+    sensor_msgs::PointCloud2 local_pointcloud_msg;
     std_msgs::Bool move_base_start_msg;
     pcl::GeneralizedIterativeClosestPoint<PointXYZ, PointXYZ> gicp;
     pcl::NormalDistributionsTransform<PointXYZ, PointXYZ> ndt;
@@ -92,11 +94,14 @@ private:
     std::mutex findbestyaw_thread_mutex;  // protects findbestyaw
     float best_yaw_angle_; // 存储最佳旋转角度
     float icp_correct;
+    float local_pointcloud_x_;
+    float local_pointcloud_y_;
     bool need_relocalization; //如果需要进行重定位，则为true
     bool start_find;
     bool find_times;
     bool transformed;
     bool saved_PCD;
+    bool finish_cut_cloud_;
     float find_min_angle;
     float min_get_score;
     float big_jump_yaw_score;
@@ -127,6 +132,7 @@ private:
     ros::Publisher map_to_odom_pub;
     ros::Publisher removal_pointcloud_publisher_;
     ros::Publisher move_base_start_pub_;
+    ros::Publisher local_pointcloud_pub_;
     ros::Subscriber pointcloud_sub;
     ros::Subscriber map_sub_;
     ros::Subscriber odom_sub_;
