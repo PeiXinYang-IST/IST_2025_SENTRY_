@@ -43,6 +43,9 @@
 #include <plan_manage/Bspline.h>
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Pose.h>
+#include <nav_msgs/Path.h>
 
 using std::vector;
 
@@ -71,17 +74,18 @@ private:
 
   Eigen::Vector3d odom_pos_, odom_vel_;  // odometry state
   Eigen::Quaterniond odom_orient_;
-
+  geometry_msgs::PoseStamped robot_pose;
   Eigen::Vector3d start_pt_, start_vel_, start_acc_, start_yaw_;  // start state
   Eigen::Vector3d target_point_, end_vel_;                        // target state
   int current_wp_;
-
+  nav_msgs::Path global_path_;
+  bool get_path_;
   /* ROS utils */
   ros::NodeHandle node_;
   ros::Timer exec_timer_, safety_timer_, vis_timer_, frontier_timer_;
-  ros::Subscriber waypoint_sub_, odom_sub_;
-  ros::Publisher replan_pub_, new_pub_, bspline_pub_;
-
+  ros::Subscriber waypoint_sub_, odom_sub_,map_to_odom_sub_,path_sub_;
+  ros::Publisher replan_pub_, new_pub_, bspline_pub_,robot_pose_pub_;
+  Eigen::Vector3f map_to_odom_vector;
   /* helper functions */
   bool callSearchAndOptimization();    // front-end and back-end method
   bool callTopologicalTraj(int step);  // topo path guided gradient-based
@@ -94,7 +98,8 @@ private:
   void checkCollisionCallback(const ros::TimerEvent& e);
   void waypointCallback(const nav_msgs::PathConstPtr& msg);
   void odometryCallback(const nav_msgs::OdometryConstPtr& msg);
-
+  void map_to_odomcallback(const geometry_msgs::TransformStamped& msg);
+  void pathCallback(const nav_msgs::Path::ConstPtr& msg);
 public:
   TopoReplanFSM(/* args */) {}
   ~TopoReplanFSM() {}

@@ -57,8 +57,8 @@
     <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
     <param name="sdf_map/local_update_range_x"  value="5.5" /> 
     <param name="sdf_map/local_update_range_y"  value="5.5" /> 
-    <param name="sdf_map/local_update_range_z"  value="4.5" /> 
-    <param name="sdf_map/obstacles_inflation"     value="0.1" /> 
+    <param name="sdf_map/local_update_range_z"  value="0.5" /> 
+    <param name="sdf_map/obstacles_inflation"     value="0.15" /> 
     <param name="sdf_map/local_bound_inflate"    value="0.5"/>
     <param name="sdf_map/local_map_margin" value="50"/>
     <param name="sdf_map/ground_height"        value="0.0"/>
@@ -111,8 +111,8 @@
     <param name="topo_prm/sample_inflate_y" value="3.5" type="double"/>
     <param name="topo_prm/sample_inflate_z" value="1.0" type="double"/>
     <param name="topo_prm/clearance" value="0.3" type="double"/>
-    <param name="topo_prm/max_sample_time" value="0.005" type="double"/>
-    <param name="topo_prm/max_sample_num" value="20000" type="int"/>
+    <param name="topo_prm/max_sample_time" value="0.01" type="double"/>
+    <param name="topo_prm/max_sample_num" value="100000" type="int"/>
     <param name="topo_prm/max_raw_path" value="300" type="int"/>
     <param name="topo_prm/max_raw_path2" value="25" type="int"/>
     <param name="topo_prm/short_cut_num" value="2" type="int"/>

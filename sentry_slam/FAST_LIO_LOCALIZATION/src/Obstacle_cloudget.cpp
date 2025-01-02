@@ -81,7 +81,7 @@ void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr
             sensor_msgs::PointCloud2 output_cloud;
             pcl::toROSMsg(*world_Obstacle_cloud_, output_cloud);
             output_cloud.header.stamp = ros::Time::now();
-            output_cloud.header.frame_id = "robot_foot_init";  // 坐标系
+            output_cloud.header.frame_id = "odom";  // 坐标系
         } else {
             ROS_WARN("No obstacles found in the map!");
         }

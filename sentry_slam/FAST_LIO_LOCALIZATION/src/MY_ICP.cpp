@@ -298,7 +298,7 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
         // std::cout << "ICP converged with score: " << gicp.getFitnessScore() << std::endl;
         transform = gicp.getFinalTransformation(); // 获取变换矩阵   
 
-        if(gicp.getFitnessScore()>re_icp_score && icp_converged_times>=5)
+        if(gicp.getFitnessScore()>re_icp_score && icp_converged_times>=15)
         {
             restart_msg.data = true;
             restart_all_pub.publish(restart_msg);

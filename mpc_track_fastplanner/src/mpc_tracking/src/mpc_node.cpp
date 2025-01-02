@@ -23,7 +23,8 @@ ros::Publisher cmd_vel_pub, motion_path_pub, predict_path_pub;
 nav_msgs::Path predict_path, motion_path;
 nav_msgs::Odometry odom;
 
-
+nav_msgs::Path global_path_;
+bool get_path_=false;
 bool receive_traj = false;
 vector<NonUniformBspline> traj;
 double traj_duration;
@@ -92,10 +93,16 @@ void replanCallback(std_msgs::Empty msg) {
   traj_duration = min(t_stop, traj_duration);
 }
 
+void pathCallback(const nav_msgs::Path::ConstPtr& msg) {
+  global_path_ = *msg;
+  get_path_ = true;
+}
+
 void odomCallback(const nav_msgs::Odometry &msg) {
+  if(get_path_){
     odom = msg;
-    current_state(0) = msg.pose.pose.position.x;
-    current_state(1) = msg.pose.pose.position.y;
+    current_state(0) = global_path_.poses[0].pose.position.x;
+    current_state(1) = global_path_.poses[0].pose.position.y;
     current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
 
     //double yaw1 = tf2::getYaw(msg.pose.pose.orientation);
@@ -111,7 +118,7 @@ void odomCallback(const nav_msgs::Odometry &msg) {
     cout << "x:" << current_state(0) << " " << "y:" << current_state(1) << endl;
     cout << "yaw1:" << current_state(2) << endl;
     //cout << "yaw2:" << yaw2 << endl;
-
+  }
 }
 
 void publish_control_cmd(const ros::TimerEvent &e) {
@@ -215,6 +222,7 @@ int main(int argc, char **argv)
     ros::Subscriber odom_sub = nh.subscribe("/odom", 1, &odomCallback);
     ros::Subscriber bspline_sub = nh.subscribe("planning/bspline", 10, bsplineCallback);
     ros::Subscriber replan_sub = nh.subscribe("planning/replan", 10, replanCallback);
+    ros::Subscriber path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, pathCallback);
 
     control_cmd_pub = nh.createTimer(ros::Duration(0.1), publish_control_cmd);
     

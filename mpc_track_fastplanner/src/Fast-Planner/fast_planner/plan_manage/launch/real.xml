@@ -67,7 +67,7 @@
     <param name="sdf_map/map_size_z"   value="$(arg map_size_z_)" /> 
     <param name="sdf_map/local_update_range_x"  value="30.0" /> 
     <param name="sdf_map/local_update_range_y"  value="30.0" /> 
-    <param name="sdf_map/local_update_range_z"  value="0.1" /> 
+    <param name="sdf_map/local_update_range_z"  value="0.5" /> 
     <param name="sdf_map/obstacles_inflation"     value="0.10" /> <!--<膨胀的半径  单位米>-->
     <param name="sdf_map/local_bound_inflate"    value="0.25"/>
     <param name="sdf_map/local_map_margin" value="50"/>

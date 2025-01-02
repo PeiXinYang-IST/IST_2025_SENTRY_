@@ -44,7 +44,7 @@ Visualization Manager:
       Length: 3
       Name: Axes
       Radius: 0.10000000149011612
-      Reference Frame: odom
+      Reference Frame: body
       Show Trail: false
       Value: true
     - Alpha: 0.5
@@ -369,11 +369,8 @@ Visualization Manager:
       Visibility:
         Axes: true
         Estimation:
+          "": true
           Value: true
-          camera: true
-          opti_track: true
-          uart_odom: true
-          vins-camera: true
         Grid: true
         Image: true
         LaserScan: true
@@ -385,8 +382,9 @@ Visualization Manager:
           local_range: true
         Map: true
         Mapping:
-          "": true
           Value: true
+          real_map: true
+          simulation_map: true
         Marker: true
         MarkerArray: true
         OccupancyGrid: true
@@ -464,7 +462,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.10000000149011612
       Style: Boxes
-      Topic: /velodyne_points
+      Topic: /Obstacle_cloudget/world_obstacle_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -658,7 +656,7 @@ Visualization Manager:
   Global Options:
     Background Color: 255; 253; 224
     Default Light: true
-    Fixed Frame: robot_foot_init
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -681,7 +679,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 22.454547882080078
+      Distance: 16.575016021728516
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -689,9 +687,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.5525031089782715
-        Y: 2.017596483230591
-        Z: -0.11114824563264847
+        X: 0.1642434149980545
+        Y: 0.11621114611625671
+        Z: -1.4324551820755005
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -699,7 +697,7 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
-      Yaw: 5.193572044372559
+      Yaw: 0.6254006624221802
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 17.48538589477539

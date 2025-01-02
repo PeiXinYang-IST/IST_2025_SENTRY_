@@ -13,10 +13,12 @@ Panels:
         - /Odometry1/Odometry1/Covariance1
         - /Odometry1/Odometry1/Covariance1/Position1
         - /Odometry1/Odometry1/Covariance1/Orientation1
+        - /Localization1
+        - /Localization1/cur_scan_in_map1
+        - /Localization1/submap_in_FOV1
         - /Localization1/localization1/Shape1
         - /MarkerArray1/Namespaces1
-        - /PointCloud21
-        - /PointCloud22
+        - /Pose1
         - /PointCloud22/Autocompute Value Bounds1
         - /Marker3/Namespaces1
       Splitter Ratio: 0.6352941393852234
@@ -224,10 +226,10 @@ Visualization Manager:
           Position Transformer: XYZ
           Queue Size: 10
           Selectable: true
-          Size (Pixels): 1
+          Size (Pixels): 2
           Size (m): 0.30000001192092896
           Style: Points
-          Topic: /MY_ICP/icp_prior_map
+          Topic: /MY_ICP/local_cloud
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -342,16 +344,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Alpha: 0.699999988079071
-      Class: rviz/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /projected_map
-      Unreliable: false
-      Use Timestamp: false
-      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -417,12 +409,22 @@ Visualization Manager:
       Unreliable: false
       Value: false
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        body:
+          Value: true
+        body_foot:
+          Value: true
+        camera_init:
+          Value: true
+        laser_scan:
+          Value: true
+        odom:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -430,9 +432,14 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        body:
+          body_foot:
+            odom:
+              camera_init:
+                laser_scan:
+                  {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
@@ -481,7 +488,7 @@ Visualization Manager:
       Size (Pixels): 4
       Size (m): 0.019999999552965164
       Style: Points
-      Topic: /MY_ICP/local_cloud
+      Topic: /processed_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -489,8 +496,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: -9999
-        Min Value: 9999
+        Max Value: 0.44999998807907104
+        Min Value: 0.05000000074505806
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -571,44 +578,6 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 0; 255; 0
-      Color Transformer: FlatColor
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.10000000149011612
-      Style: Boxes
-      Topic: /Obstacle_cloudget/world_obstacle_cloud
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 0.699999988079071
-      Class: rviz/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /prior_map
-      Unreliable: false
-      Use Timestamp: false
-      Value: true
-    - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
       Color: 25; 255; 255
@@ -665,15 +634,6 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Alpha: 1
-      Class: rviz/Axes
-      Enabled: false
-      Length: 1
-      Name: Axes
-      Radius: 0.05000000074505806
-      Reference Frame: odom
-      Show Trail: false
-      Value: false
-    - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz/Pose
@@ -686,8 +646,18 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
-      Topic: /pid_follow/robot_pose
+      Topic: /robot_pose
       Unreliable: false
+      Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /prior_map
+      Unreliable: false
+      Use Timestamp: false
       Value: true
   Enabled: true
   Global Options:
@@ -717,7 +687,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.264772415161133
+      Distance: 38.93601608276367
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -725,17 +695,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -2.540886878967285
-        Y: 1.3131953477859497
-        Z: -1.7693992853164673
+        X: -0.00992666557431221
+        Y: -1.7231022119522095
+        Z: -0.834469199180603
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6247972249984741
+      Pitch: 1.2547966241836548
       Target Frame: <Fixed Frame>
-      Yaw: 5.5042338371276855
+      Yaw: 2.271080732345581
     Saved: ~
 Window Geometry:
   Displays:

@@ -9,7 +9,7 @@ from collections import deque
 import math
 
 # 定义移动平均滤波器窗口大小
-MA_WINDOW_SIZE = 3  # 例如，取10个最近的变换数据进行平均
+MA_WINDOW_SIZE = 3  # 取10个最近的变换数据进行平均
 
 # 初始化全局变量以存储过去的变换数据
 translation_queue = deque(maxlen=MA_WINDOW_SIZE)

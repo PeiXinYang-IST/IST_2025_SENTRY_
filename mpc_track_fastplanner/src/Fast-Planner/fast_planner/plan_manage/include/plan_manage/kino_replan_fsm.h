@@ -20,6 +20,9 @@
 #include <plan_manage/Bspline.h>
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Pose.h>
+#include <nav_msgs/Path.h>
 
 using std::vector;
 
@@ -62,23 +65,24 @@ private:
   double no_replan_thresh_, replan_thresh_;
   double waypoints_[50][3];
   int waypoint_num_;
-
+  Eigen::Vector3f map_to_odom_vector;
   /* planning data */
   bool trigger_, have_target_, have_odom_;
   FSM_EXEC_STATE exec_state_;
-
+  geometry_msgs::PoseStamped robot_pose;
   Eigen::Vector3d odom_pos_, odom_vel_;  // odometry state
   Eigen::Quaterniond odom_orient_;
 
   Eigen::Vector3d start_pt_, start_vel_, start_acc_, start_yaw_;  // start state
   Eigen::Vector3d end_pt_, end_vel_;                              // target state
   int current_wp_;
-
+  bool get_path_;
+  nav_msgs::Path global_path_;
   /* ROS utils */
   ros::NodeHandle node_;
   ros::Timer exec_timer_, safety_timer_, vis_timer_, test_something_timer_;
-  ros::Subscriber waypoint_sub_, odom_sub_;
-  ros::Publisher replan_pub_, new_pub_, bspline_pub_;
+  ros::Subscriber waypoint_sub_, odom_sub_,map_to_odom_sub_,path_sub_;
+  ros::Publisher replan_pub_, new_pub_, bspline_pub_,robot_pose_pub_;
 
   /* helper functions */
   bool callKinodynamicReplan();        // front-end and back-end method
@@ -92,6 +96,8 @@ private:
   void checkCollisionCallback(const ros::TimerEvent& e);
   void waypointCallback(const nav_msgs::PathConstPtr& msg);
   void odometryCallback(const nav_msgs::OdometryConstPtr& msg);
+  void map_to_odomcallback(const geometry_msgs::TransformStamped& msg);
+  void pathCallback(const nav_msgs::Path::ConstPtr& msg);
   void way();
 public:
   KinoReplanFSM(/* args */) {

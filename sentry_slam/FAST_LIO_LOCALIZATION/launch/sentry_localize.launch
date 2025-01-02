@@ -59,15 +59,15 @@
 		<param name="kdtree_search_radius" value="0.03"/>
 		<param name="filter_search_radius" value="0.15"/>
 	</node>
-
+ 
 	<!-- 发布一个雷达body到机器人足端body_foot的静态映射 -->
-	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_1" args="0 0 0.25 0 0 0 body body_foot" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_1" args="0 0 0.4 0 0 0 body body_foot" />
 
-	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_3" args="0 0 0 0 0 0 camera_init odom" /> -->
+	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_4" args="0 0 0 0 0 0 camera_init odom" /> -->
 	<!-- 发布一个雷达初始位置camera_init到机器人足端初始位置body_init的静态映射 -->
 	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_2" args="0 0 0 0 0 0 body_foot odom" />
 	<!-- 2d平面重合的点云 -->
-	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_3" args="-0.3 0 0.07 0 -0.73 0 camera_init laser_scan" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_3" args="-0.3 0 0.07 0 0 0 camera_init laser_scan" />
 	<!-- 发布一个雷达初始位置camera_init到map的静态映射 -->
 	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_5" args="0 0 0 0 0 0 odom map" /> -->
 	<!-- 发布一个map到机器人足端初始位置body_init的静态映射 -->
