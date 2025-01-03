@@ -4,13 +4,15 @@
 source /home/rm/catkin_livox_ros_driver2/devel/setup.sh
 
 # Launch omni_gazebo gazebo
-roslaunch simple_meca_car gazebo.launch &
+roslaunch simple_meca_car race.launch &
 
 # Wait for some time to ensure the previous launch finishes before starting the next one
 sleep 5
 
 # Run lidar2world node
 rosrun lidar2world lidar2world_node &
+
+rosrun fast_lio_localization sim_point_cloud_deal &
 
 # Run mpc_tracking node
 rosrun mpc_tracking mpc_tracking_node &

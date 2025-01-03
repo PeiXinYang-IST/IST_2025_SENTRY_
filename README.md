@@ -327,4 +327,10 @@ lio和imu进行ekf融合，防止lio飘飞，这里icp对map to odom的维护并
 修改了fast_planner中对于起点的判定为move_base的全局规划起点  
 
 测试：
-kinodu A*的全局搜索目前在实体中优于拓扑规划，但在仿真中则是topu更加有优势
+kinody A*的全局搜索目前在实体中优于拓扑规划，但在仿真中则是topu更加有优势
+
+## /* 2025 1.3 */
+添加了rmuc2025地图 这里添加sdf文件以及world到gazebo中过于繁琐，有没有其他方法？
+开始着手对于仿真mid360 以及在仿真中复现fast_lio
+
+测试：需要使用在实体中用到的点云差分

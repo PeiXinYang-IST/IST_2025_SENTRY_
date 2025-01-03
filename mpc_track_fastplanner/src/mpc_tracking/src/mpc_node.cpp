@@ -99,11 +99,16 @@ void pathCallback(const nav_msgs::Path::ConstPtr& msg) {
 }
 
 void odomCallback(const nav_msgs::Odometry &msg) {
-  if(get_path_){
+  // if(get_path_){
     odom = msg;
-    current_state(0) = global_path_.poses[0].pose.position.x;
-    current_state(1) = global_path_.poses[0].pose.position.y;
+//sim
+    current_state(0) = msg.pose.pose.position.x;
+    current_state(1) = msg.pose.pose.position.y;
     current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
+//real
+    // current_state(0) = global_path_.poses[0].pose.position.x;
+    // current_state(1) = global_path_.poses[0].pose.position.y;
+    // current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
 
     //double yaw1 = tf2::getYaw(msg.pose.pose.orientation);
     // Eigen::Quaterniond quaternion;
@@ -119,7 +124,7 @@ void odomCallback(const nav_msgs::Odometry &msg) {
     cout << "yaw1:" << current_state(2) << endl;
     //cout << "yaw2:" << yaw2 << endl;
   }
-}
+// }
 
 void publish_control_cmd(const ros::TimerEvent &e) {
     if (!receive_traj) return;

@@ -123,11 +123,11 @@
     <param name="search/max_vel" value="$(arg max_vel)" type="double"/>
     <param name="search/max_acc" value="$(arg max_acc)" type="double"/>
     <param name="search/w_time" value="10.0" type="double"/>
-    <param name="search/horizon" value="15.0" type="double"/><!--限制全局规划的距离，保证实时性-->
-    <param name="search/lambda_heu" value="10.0" type="double"/><!--启发函数权重-->
+    <param name="search/horizon" value="20.0" type="double"/><!--限制全局规划的距离，保证实时性-->
+    <param name="search/lambda_heu" value="5.0" type="double"/><!--启发函数权重-->
     <param name="search/resolution_astar" value="0.1" type="double"/><!--空间分辨率-->
     <param name="search/time_resolution" value="0.8" type="double"/><!--时间维度分辨率-->
-    <param name="search/margin" value="0.5" type="double"/><!--检测碰撞-->
+    <param name="search/margin" value="0.2" type="double"/><!--检测碰撞-->
     <param name="search/allocate_num" value="2000000" type="int"/><!--最大节点数目-->
     <param name="search/check_num" value="5" type="int"/><!--对中间状态安全检查-->
 

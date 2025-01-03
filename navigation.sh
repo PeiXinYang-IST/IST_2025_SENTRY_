@@ -38,7 +38,7 @@ restart_nodes() {
 
     sleep 1
 #real
-    roslaunch plan_manage topu_replan.launch &
+    roslaunch plan_manage real.launch &
     PID_FAST_PLANNER=$!
     echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
@@ -61,6 +61,9 @@ kill_processes() {
     fi
     if [ ! -z "$PID_NAV" ]; then
         kill -SIGINT $PID_NAV
+    fi
+    if [ ! -z "$PID_FAST_PLANNER" ]; then
+        kill -SIGINT $PID_FAST_PLANNER
     fi
     if [ ! -z "$PID_SERIAL" ]; then
         kill -SIGINT $PID_SERIAL

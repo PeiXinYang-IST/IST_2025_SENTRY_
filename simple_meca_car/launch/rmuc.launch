@@ -1,0 +1,10 @@
+<launch>
+  <!-- 设置使用仿真时间 -->
+  <param name="/use_sim_time" value="true" />
+
+  <!-- 启动Gazebo并加载.world文件 -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find simple_meca_car)/world/rmuc_2025/rmuc_2025.world"/>
+  </include>
+
+</launch>
