@@ -102,12 +102,12 @@ vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state) 
         vars_upperbound[i] = 1e19;
     }
     for (int i = u_start; i < v_start; ++i) {
-        vars_lowerbound[i] = -3.2;
-        vars_upperbound[i] = 3.2;
+        vars_lowerbound[i] = -1.5;
+        vars_upperbound[i] = 1.5;
     }
     for (int i = v_start; i < r_start; ++i) {
-        vars_lowerbound[i] = -3.2;
-        vars_upperbound[i] = 3.2;        
+        vars_lowerbound[i] = -1.5;
+        vars_upperbound[i] = 1.5;        
     }
     for (int i = r_start; i < n_var; ++i) {
         vars_lowerbound[i] = -1;

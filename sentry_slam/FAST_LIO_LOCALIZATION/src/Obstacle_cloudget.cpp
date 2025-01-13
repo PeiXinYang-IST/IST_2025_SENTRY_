@@ -6,18 +6,26 @@ incoming_cloud_(new pcl::PointCloud<pcl::PointXYZ>),
 cloudTarget(new pcl::PointCloud<pcl::PointXYZ>),
 map_cloud_(new pcl::PointCloud<pcl::PointXYZ>),
 transformed_cloud_(new pcl::PointCloud<pcl::PointXYZ>),
+cloud_filtered_radius(new pcl::PointCloud<pcl::PointXYZ>),
+cloud_removed(new pcl::PointCloud<pcl::PointXYZ>),
+real_obstacle_cloud(new pcl::PointCloud<pcl::PointXYZ>),
+kdmeans_cloud(new pcl::PointCloud<pcl::PointXYZ>),
+real_obstacle_filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>),
 world_Obstacle_cloud_(new pcl::PointCloud<pcl::PointXYZ>)
 {
     incoming_cloud_sub_ = nh_.subscribe("/processed_cloud", 1, &Obstacle_cloud_get::pointCloudCallback, this);    
-    removal_pointcloud_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>("removed_cloud", 1);
+    removal_pointcloud_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>("real_obstacle_cloud", 1);
     prior_map_sub_ = nh_.subscribe("/map", 1, &Obstacle_cloud_get::mappointCloudCallback, this);   
     incoming_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("incoming_cloud", 1);
     pub_prior_map_ = nh_.advertise<sensor_msgs::PointCloud2>("prior_map", 1);
     Obstacle_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("obstacle_cloud", 1);
+    yaw_pub_ = nh_.advertise<std_msgs::Float32>("yaw_angle", 1);
     odom_sub_ = nh_.subscribe("Odometry", 1, &Obstacle_cloud_get::odomCallback, this);
     map_to_odom_sub_ = nh_.subscribe("/MY_ICP/map_to_odom", 1 ,&Obstacle_cloud_get::transformCallback, this);
     world_obstacle_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("world_obstacle_cloud", 1);
     grid_map_sub_ = nh_.subscribe("/prior_map",  1, &Obstacle_cloud_get::gridmapCallback, this);
+    marker_pub = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+    kdmeans_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("kdmeans_cloud", 1);
     Init_params();
 
     icp_transform_ = Eigen::Matrix4f::Identity();
@@ -63,9 +71,9 @@ void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr
                     world_Obstacle_cloud_->points.push_back(point);      
                     point.z = 0.5;  
                     world_Obstacle_cloud_->points.push_back(point);                  
-                    point.z = -0.3;  
+                    point.z = 0.6;  
                     world_Obstacle_cloud_->points.push_back(point);
-                    point.z = -0.2;  
+                    point.z = 0.7;  
                     world_Obstacle_cloud_->points.push_back(point);      
                     point.z = -0.1;  
                     world_Obstacle_cloud_->points.push_back(point); 
@@ -89,7 +97,7 @@ void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr
 
 void Obstacle_cloud_get::Init_params()
 {
-    nh_.param<float>("kdtree_search_radius",kdtree_search_radius_,0.03);
+    nh_.param<float>("kdtree_search_radius",kdtree_search_radius_,0.02);
     nh_.param<float>("filter_search_radius",filter_search_radius_,0.15);
     transform = Eigen::Matrix4f::Identity();
     transform.block<3, 3>(0, 0) = Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ()).toRotationMatrix();
@@ -142,7 +150,6 @@ void Obstacle_cloud_get::mappointCloudCallback(const sensor_msgs::PointCloud2Con
     set_kdtree_map=true;
     }
     getmap_ = true;
-
 }
 
 // 里程计数据的回调函数
@@ -162,15 +169,12 @@ void Obstacle_cloud_get::odomCallback(const nav_msgs::Odometry::ConstPtr& odom_m
 void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud_map_msg, 
                               pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud_msg, 
                               double Distance_Threshold) {
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_removed(new pcl::PointCloud<pcl::PointXYZ>);
+    static bool get_yaw=false;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_processed(new pcl::PointCloud<pcl::PointXYZ>);
-
     // pcl::toROSMsg(*cloud_map_msg, prior_map_msg);
     // prior_map_msg.header.frame_id = "map";
     // prior_map_msg.header.stamp = ros::Time::now();
     // pub_prior_map_.publish(prior_map_msg);
-
 
     pcl::transformPointCloud(*cloud_msg, *cloud_processed, icp_transform_); // 应用变换
     // ROS_WARN("BEGIN GET OBSTACLE!!!");
@@ -181,6 +185,18 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     // incoming_pub_.publish(incoming_cloud_msg); //发布实时雷达点云
 
 	start_time=clock();
+
+    //这里保存缓存点云，防止因为在视野盲区而无法计入sdf_map  具体缓存时间根据旋转速度而定
+    static ros::Time last_time,current_time;
+    current_time = ros::Time::now();
+    if (current_time - last_time > ros::Duration(1.5)) {
+        last_time = current_time;
+        get_yaw=true;
+        cloud_removed->clear();
+    }
+
+    real_obstacle_cloud->clear();
+    real_obstacle_filtered_cloud->clear();
 
     int K = 1;  // 1-nearest neighbor search
     for (size_t i = 0; i < cloud_processed->points.size(); ++i) {
@@ -193,12 +209,12 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
                 cloud_processed->erase(cloud_processed->begin() + i);   //这里进行了剔除
                 --i;  // Decrement i because the size of the cloud has changed
                 cloud_removed->push_back(searchPoint);  // Optionally store the removed point
+                real_obstacle_cloud->push_back(searchPoint); 
             }
         }
     }
-    
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_radius(new pcl::PointCloud<pcl::PointXYZ>);
-    cloud_filtered_radius->clear();
+
+
     //使用半径搜索滤波 去除噪点 
     if(!cloud_removed->empty())
     {
@@ -210,6 +226,16 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     outrem.setMinNeighborsInRadius(10);
     // 执行滤波
     outrem.filter(*cloud_filtered_radius);
+    
+
+    // 设置输入点云
+    outrem.setInputCloud(real_obstacle_cloud);
+    // 设置搜索半径
+    outrem.setRadiusSearch(filter_search_radius_);
+    // 设置最小邻居数
+    outrem.setMinNeighborsInRadius(10);
+    // 执行滤波
+    outrem.filter(*real_obstacle_cloud);
     }
 
 	end_time=clock();
@@ -217,11 +243,24 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     cloud_filtered_radius->width = cloud_filtered_radius->points.size();
     cloud_filtered_radius->height = 1;
     cloud_filtered_radius->is_dense = false;  // contains nans
-    
-    pcl::toROSMsg(*cloud_removed, cloud_removed_msg);
-    cloud_removed_msg.header.frame_id = "odom";
-    cloud_removed_msg.header.stamp = ros::Time::now();
-    removal_pointcloud_publisher_.publish(cloud_removed_msg);
+
+    //对实时点云处理
+    for(int i=0;i<real_obstacle_cloud->size();i++)
+    {
+        if(real_obstacle_cloud->points[i].x < fabs(clear_distance_x+30) && 
+        real_obstacle_cloud->points[i].y < fabs(clear_distance_y+30) &&
+        real_obstacle_cloud->points[i].z < clear_distance_z+2.5 && 
+        real_obstacle_cloud->points[i].z > clear_distance_z-0.8)
+        {
+            // ROS_INFO("input_cloud : X:%f Y:%f Z:%f",input_cloud->points[i].x,input_cloud->points[i].y,input_cloud->points[i].z);
+            real_obstacle_filtered_cloud->points.push_back(real_obstacle_cloud->points[i]);
+        }
+    }
+
+    pcl::toROSMsg(*real_obstacle_filtered_cloud, real_obstacle_cloud_msg);
+    real_obstacle_cloud_msg.header.frame_id = "odom";
+    real_obstacle_cloud_msg.header.stamp = ros::Time::now();
+    removal_pointcloud_publisher_.publish(real_obstacle_cloud_msg);
 
     pcl::toROSMsg(*cloud_filtered_radius, obstacle_cloud_msg);
     obstacle_cloud_msg.header.frame_id = "odom";
@@ -236,7 +275,153 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     world_obstacle_msg.header.frame_id = "odom";
     world_obstacle_msg.header.stamp = ros::Time::now();
     world_obstacle_pub_.publish(world_obstacle_msg);
+
+    if(!real_obstacle_filtered_cloud->empty() && get_yaw)
+    obstacle_cloud_get_pose();
+
 }
+
+
+//使用点云聚类将障碍物点云聚类为具体位置
+void Obstacle_cloud_get::obstacle_cloud_get_pose()
+{
+    if (real_obstacle_filtered_cloud->empty()) {
+        ROS_WARN("No points in real_obstacle_filtered_cloud, skipping clustering.");
+        return;
+    }
+
+    // 创建Kd树对象用于点云的搜索
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
+    tree->setInputCloud(real_obstacle_filtered_cloud);
+
+    // 设置聚类算法的参数
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+    ec.setClusterTolerance(0.05); // 3cm
+    ec.setMinClusterSize(10);
+    ec.setMaxClusterSize(25000);
+    ec.setSearchMethod(tree);
+    ec.setInputCloud(real_obstacle_filtered_cloud);
+
+    std::vector<pcl::PointIndices> cluster_indices;
+    ec.extract(cluster_indices);
+    kdmeans_cloud->clear();
+
+for (const auto& indices : cluster_indices) {
+    pcl::PointXYZ centroid;
+    std::vector<pcl::PointXYZ> centroids;
+    pcl::PointXYZ kdmeans_point;
+    centroid.x = centroid.y = centroid.z = 0.0;
+    for (const auto& idx : indices.indices) {
+        centroid.x += (*real_obstacle_filtered_cloud)[idx].x;
+        centroid.y += (*real_obstacle_filtered_cloud)[idx].y;
+    }
+
+    centroid.x /= indices.indices.size();
+    centroid.y /= indices.indices.size();
+    centroid.z = 0.5;
+    centroids.push_back(centroid);
+
+    // centroid即为该障碍物的大致位置
+    // 可以将其输出或存储起来供后续使用
+    // ROS_INFO("centroid X:%f",centroid.x);
+    // ROS_INFO("centroid Y:%f",centroid.y);
+    // ROS_INFO("centroid Z:%f",centroid.z);
+
+    double min_distance = std::numeric_limits<double>::max();
+        pcl::PointXYZ nearest_centroid;
+        for (const auto& centroid : centroids) {
+            double distance = std::sqrt((centroid.x - clear_distance_x) * (centroid.x - clear_distance_x) +
+                                        (centroid.y - clear_distance_y) * (centroid.y - clear_distance_x));
+            if (distance < min_distance) {
+                min_distance = distance;
+                nearest_centroid = centroid;
+            }
+        }
+
+    pcl::PointXYZ odom_point;
+    odom_point.x=clear_distance_x;
+    odom_point.y=clear_distance_z;
+    moving_average_filter(nearest_centroid);
+    calculateYaw();
+    // visual_centroid(odom_point);
+    visual_centroid(filtered_centroid_);
+}
+}
+
+void Obstacle_cloud_get::moving_average_filter(const pcl::PointXYZ& new_centroid) {
+        centroid_history_.push_back(new_centroid);
+        if (centroid_history_.size() > filter_window_size_) {
+            centroid_history_.pop_front();
+        }
+
+        filtered_centroid_.x = 0.0;
+        filtered_centroid_.y = 0.0;
+        for (const auto& centroid : centroid_history_) {
+            filtered_centroid_.x += centroid.x;
+            filtered_centroid_.y += centroid.y;
+        }
+        filtered_centroid_.x /= centroid_history_.size();
+        filtered_centroid_.y /= centroid_history_.size();
+        filtered_centroid_.z = 0.5;
+}
+
+void Obstacle_cloud_get::calculateYaw()
+{
+    static float distance_x,distance_y,last_yaw;
+    float alpha = 0.2;
+    distance_x = filtered_centroid_.x - clear_distance_x;
+    distance_y = filtered_centroid_.y - clear_distance_y;
+    yaw_angle = atan2(distance_y, distance_x);
+    yaw_angle = alpha * last_yaw + (1-alpha)*yaw_angle;
+    last_yaw = yaw_angle;
+
+    double yaw_angle_degrees = yaw_angle * (180.0 / M_PI);  // 转换为度数
+    if (yaw_angle_degrees > 180.0) {
+        yaw_angle_degrees -= 360.0;
+    }
+    yaw_msg.data = yaw_angle;
+    yaw_pub_.publish(yaw_msg);
+    ROS_WARN("yaw_angle: %f",yaw_angle_degrees);
+}
+
+void Obstacle_cloud_get::visual_centroid(const pcl::PointXYZ point)
+{
+     // 创建一个Marker消息
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "odom";  // 设置参考坐标系
+    marker.header.stamp = ros::Time::now();
+    marker.ns = "centroid";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::SPHERE;  // 设置标记类型为球体
+    marker.action = visualization_msgs::Marker::ADD;  // 添加标记
+
+    // 设置标记的位置
+    marker.pose.position.x = point.x;
+    marker.pose.position.y = point.y;
+    marker.pose.position.z = point.z;
+
+    // 设置标记的方向（这里不需要设置，因为球体没有方向）
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+
+    // 设置标记的大小
+    marker.scale.x = 0.35;
+    marker.scale.y = 0.35;
+    marker.scale.z = 0.35;
+
+    // 设置标记的颜色
+    marker.color.a = 1.0;  // 透明度
+    marker.color.r = 1.0;  // 红色
+    marker.color.g = 0.0;  // 绿色
+    marker.color.b = 0.0;  // 蓝色
+
+    // 设置标记的生命周期（0表示永久存在）
+    marker.lifetime = ros::Duration();
+    marker_pub.publish(marker);
+}
+
 
 //这里pcl库中定义的点云就是boost::shared_ptr类型,可以自动释放内存，无需delete对象
 Obstacle_cloud_get::~Obstacle_cloud_get() {

@@ -1,7 +1,7 @@
 <launch>
   <!-- global parameters -->
-  <arg name="map_size_x" value="50.0"/>
-  <arg name="map_size_y" value="50.0"/>
+  <arg name="map_size_x" value="15.0"/>
+  <arg name="map_size_y" value="15.0"/>
   <arg name="map_size_z" value="0.5"/>
   <arg name="odom_topic" value="/odom" />
   <!-- odom -->
@@ -22,7 +22,7 @@
 
     <!-- topic of point cloud measurement, such as from LIDAR  -->
     <!-- don't set camera pose and depth, if you already set this one! -->
-    <arg name="cloud_topic" value="/processed_cloud"/> 
+    <arg name="cloud_topic" value="/Obstacle_cloudget/world_obstacle_cloud"/> 
     <!-- real  "/Obstacle_cloudget/world_obstacle_cloud-->
     <!-- sim  /sim_Obstacle_map_cloud/world_obstacle_cloud -->
 
@@ -33,8 +33,8 @@
     <arg name="fy" value="387.229248046875"/>
 
     <!-- maximum velocity and acceleration the drone will reach -->
-    <arg name="max_vel" value="3" />
-    <arg name="max_acc" value="3" />
+    <arg name="max_vel" value="0.8" />
+    <arg name="max_acc" value="0.3" />
 
     <!-- 1: use 2D Nav Goal to select goal  -->
     <!-- 2: use global waypoints below  -->
@@ -76,7 +76,7 @@
     <param name="waypoint_type" value="manual-lonely-waypoint"/>    
   </node>
 
-  <!-- <node pkg="mpc_tracking" name="mpc_tracking_node" type="mpc_tracking_node" output="screen" respawn="true" /> -->
+  <node pkg="mpc_tracking" name="mpc_tracking_node" type="mpc_tracking_node" output="screen" respawn="true" />
   <!-- use simulator
   <include file="$(find plan_manage)/launch/simulator.xml">
     <arg name="map_size_x_" value="$(arg map_size_x)"/>

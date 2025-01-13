@@ -46,6 +46,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Bool.h>
 
 using std::vector;
 
@@ -71,7 +72,8 @@ private:
   /* planning data */
   bool trigger_, have_target_, have_odom_, collide_;
   FSM_EXEC_STATE exec_state_;
-
+  std_msgs::Bool fast_planner_start_msg;
+  bool fast_planner_start;
   Eigen::Vector3d odom_pos_, odom_vel_;  // odometry state
   Eigen::Quaterniond odom_orient_;
   geometry_msgs::PoseStamped robot_pose;
@@ -83,7 +85,7 @@ private:
   /* ROS utils */
   ros::NodeHandle node_;
   ros::Timer exec_timer_, safety_timer_, vis_timer_, frontier_timer_;
-  ros::Subscriber waypoint_sub_, odom_sub_,map_to_odom_sub_,path_sub_;
+  ros::Subscriber waypoint_sub_, odom_sub_,map_to_odom_sub_,path_sub_,fast_planner_sub_;
   ros::Publisher replan_pub_, new_pub_, bspline_pub_,robot_pose_pub_;
   Eigen::Vector3f map_to_odom_vector;
   /* helper functions */
@@ -92,6 +94,7 @@ private:
                                        // optimization; 1: new, 2: replan
   void changeFSMExecState(FSM_EXEC_STATE new_state, string pos_call);
   void printFSMExecState();
+  void start_task(const std_msgs::Bool::ConstPtr& msg);
 
   /* ROS functions */
   void execFSMCallback(const ros::TimerEvent& e);

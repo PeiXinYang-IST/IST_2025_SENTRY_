@@ -45,7 +45,7 @@ void TopoReplanFSM::init(ros::NodeHandle& nh) {
     nh.param("fsm/waypoint" + to_string(i) + "_y", waypoints_[i][1], -1.0);
     nh.param("fsm/waypoint" + to_string(i) + "_z", waypoints_[i][2], -1.0);
   }
-
+  get_path_ = false;
   /* initialize main modules */
   planner_manager_.reset(new FastPlannerManager);
   planner_manager_->initPlanModules(nh);
@@ -62,6 +62,9 @@ void TopoReplanFSM::init(ros::NodeHandle& nh) {
   replan_pub_  = nh.advertise<std_msgs::Empty>("/planning/replan", 20);
   new_pub_     = nh.advertise<std_msgs::Empty>("/planning/new", 20);
   bspline_pub_ = nh.advertise<plan_manage::Bspline>("/planning/bspline", 20);
+  fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, &TopoReplanFSM::start_task, this);
+  path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &TopoReplanFSM::pathCallback, this);
+
 }
 
 void TopoReplanFSM::waypointCallback(const nav_msgs::PathConstPtr& msg) {
@@ -108,10 +111,28 @@ void TopoReplanFSM::waypointCallback(const nav_msgs::PathConstPtr& msg) {
   }
 }
 
+void TopoReplanFSM::start_task(const std_msgs::Bool::ConstPtr& msg){
+  if(msg->data)
+  fast_planner_start = true;
+}
+
+void TopoReplanFSM::pathCallback(const nav_msgs::Path::ConstPtr& msg) {
+  global_path_ = *msg;
+  get_path_ = true;
+}
+
 void TopoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
-  odom_pos_(0) = msg->pose.pose.position.x;
-  odom_pos_(1) = msg->pose.pose.position.y;
-  odom_pos_(2) = msg->pose.pose.position.z;
+if(get_path_){
+  geometry_msgs::PoseStamped robot_pose_;
+  global_path_.header.frame_id = "odom";
+  global_path_.header.stamp = ros::Time::now();
+  odom_pos_(0) = global_path_.poses[0].pose.position.x-0.09;
+  odom_pos_(1) = global_path_.poses[0].pose.position.y;
+  odom_pos_(2) = global_path_.poses[0].pose.position.z;
+
+  // odom_pos_(0) = msg->pose.pose.position.x;
+  // odom_pos_(1) = msg->pose.pose.position.y;
+  // odom_pos_(2) = msg->pose.pose.position.z;
 
   odom_vel_(0) = msg->twist.twist.linear.x;
   odom_vel_(1) = msg->twist.twist.linear.y;
@@ -122,7 +143,16 @@ void TopoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
   odom_orient_.y() = msg->pose.pose.orientation.y;
   odom_orient_.z() = msg->pose.pose.orientation.z;
 
+  // robot_pose_.pose = global_path_.poses[0].pose;
+  // robot_pose_.pose.position.x = odom_pos_(0);
+  // robot_pose_.pose.position.y = odom_pos_(1);
+  // robot_pose_.pose.position.z = odom_pos_(2);
+  // robot_pose_.header.frame_id = "odom";
+  // robot_pose_.pose.orientation = tf2::toMsg(new_quat);
+  // robot_pose_pub_.publish(robot_pose_);
+  
   have_odom_ = true;
+}
 }
 
 void TopoReplanFSM::changeFSMExecState(FSM_EXEC_STATE new_state, string pos_call) {

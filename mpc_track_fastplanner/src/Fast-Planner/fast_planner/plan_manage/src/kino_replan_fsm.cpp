@@ -1,5 +1,6 @@
 
 #include <plan_manage/kino_replan_fsm.h>
+
 int temp = 0;
 namespace fast_planner {
 
@@ -8,7 +9,7 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
   exec_state_  = FSM_EXEC_STATE::INIT;
   have_target_ = false;
   have_odom_   = false;
-
+  fast_planner_start = false;
   /*  fsm param  */
   nh.param("fsm/flight_type", target_type_, -1);
   nh.param("fsm/thresh_replan", replan_thresh_, -1.0);
@@ -22,6 +23,7 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
     nh.param("fsm/waypoint" + to_string(i) + "_z", waypoints_[i][2], -1.0);
   }
   get_path_ = false;
+
   /* initialize main modules */
   planner_manager_.reset(new FastPlannerManager);
   planner_manager_->initPlanModules(nh);
@@ -41,6 +43,7 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
   new_pub_     = nh.advertise<std_msgs::Empty>("/planning/new", 10);
   bspline_pub_ = nh.advertise<plan_manage::Bspline>("/planning/bspline", 10);
   path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &KinoReplanFSM::pathCallback, this);
+  fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, &KinoReplanFSM::start_task, this);
 }
 
 void KinoReplanFSM::waypointCallback(const nav_msgs::PathConstPtr& msg) {
@@ -81,11 +84,17 @@ void KinoReplanFSM::pathCallback(const nav_msgs::Path::ConstPtr& msg) {
   get_path_ = true;
 }
 
-void KinoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
-  if(get_path_){
-  geometry_msgs::PoseStamped robot_pose_;
+void KinoReplanFSM::start_task(const std_msgs::Bool::ConstPtr& msg){
+  if(msg->data)
+  fast_planner_start = true;
+}
 
-  odom_pos_(0) = global_path_.poses[0].pose.position.x;
+void KinoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
+if(get_path_){
+  geometry_msgs::PoseStamped robot_pose_;
+  global_path_.header.frame_id = "odom";
+  global_path_.header.stamp = ros::Time::now();
+  odom_pos_(0) = global_path_.poses[0].pose.position.x-0.09;
   odom_pos_(1) = global_path_.poses[0].pose.position.y;
   odom_pos_(2) = global_path_.poses[0].pose.position.z;
 
@@ -98,7 +107,6 @@ void KinoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
   odom_orient_.y() = msg->pose.pose.orientation.y;
   odom_orient_.z() = msg->pose.pose.orientation.z;
 
-
   robot_pose_.pose = global_path_.poses[0].pose;
   // robot_pose_.pose.position.x = odom_pos_(0);
   // robot_pose_.pose.position.y = odom_pos_(1);
@@ -106,8 +114,9 @@ void KinoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
   robot_pose_.header.frame_id = "odom";
   // robot_pose_.pose.orientation = tf2::toMsg(new_quat);
   robot_pose_pub_.publish(robot_pose_);
-  }
+  
   have_odom_ = true;
+}
 }
 
 void KinoReplanFSM::changeFSMExecState(FSM_EXEC_STATE new_state, string pos_call) {

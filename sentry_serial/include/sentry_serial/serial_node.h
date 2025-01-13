@@ -16,8 +16,8 @@
 //创建窗口对象
 serial::Serial ser;
 
-uint8_t test_data[18];
-uint8_t data_len = 18;
+uint8_t test_data[22];
+uint8_t data_len = 22;
 std::string smooth_cmd_vel;
 std::string cmd_vel_topic;
 

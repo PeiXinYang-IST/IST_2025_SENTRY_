@@ -64,3 +64,8 @@
 『19』 Setting goal: Frame:map, Position(7.551, 22.791, 0.000), Orientation(0.000, 0.000, 0.743, 0.670) = Angle: 1.674
 『20』 Setting goal: Frame:map, Position(5.489, 24.585, 0.000), Orientation(0.000, 0.000, 0.947, 0.321) = Angle: 2.488
 『21』 Setting goal: Frame:map, Position(9.630, 24.650, 0.000), Orientation(0.000, 0.000, 0.452, 0.892) = Angle: 0.938
+
+
+1 Setting goal: Frame:odom, Position(-4.418, -2.597, 0.000), Orientation(0.000, 0.000, -0.962, 0.272) = Angle: -2.591
+2 Setting goal: Frame:odom, Position(4.149, -3.172, 0.000), Orientation(0.000, 0.000, -0.216, 0.976) = Angle: -0.436
+3 Setting goal: Frame:odom, Position(-1.290, -2.277, 0.000), Orientation(0.000, 0.000, -0.975, 0.222) = Angle: -2.694

@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     // 加载点云数据
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     // /home/rm/catkin_livox_ros_driver2/src/faster-lio/PCD/scans.pcd
-    if (pcl::io::loadPCDFile<pcl::PointXYZ>("/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO/PCD/scans.pcd", *cloud) == -1) {
+    if (pcl::io::loadPCDFile<pcl::PointXYZ>("/home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO/PCD/scans.pcd", *cloud) == -1) {
         PCL_ERROR("Couldn't read file scans.pcd \n");
         return (-1);
     }
@@ -46,17 +46,17 @@ int main(int argc, char** argv) {
 
     // 设置过滤字段为 "z" 并设置范围
     pass.setFilterFieldName("z");
-    pass.setFilterLimits(0.0, 2.0);  // 保留高度在 0 到 2.0 米之间的点云
+    pass.setFilterLimits(0.05, 3.5);  // 保留高度在 0 到 3.5 米之间的点云
 
     // 执行滤波
     pass.filter(*filteredCloud);
 
     // 保存处理后的点云数据
-    if (pcl::io::savePCDFile<pcl::PointXYZ>("/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO/PCD/demo.pcd", *cloud_filtered_voxel) == -1) {
+    if (pcl::io::savePCDFile<pcl::PointXYZ>("/home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO/PCD/demo.pcd", *cloud_filtered_voxel) == -1) {
         PCL_ERROR("Couldn't write file demo.pcd \n");
         return (-1);
     }
-    pcl::io::savePCDFile<pcl::PointXYZ>("/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/PCD/demo.pcd", *cloud_filtered_voxel);
+    pcl::io::savePCDFile<pcl::PointXYZ>("/home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/PCD/demo.pcd", *cloud_filtered_voxel);
     std::cout << "Saved "
               << cloud_filtered_voxel->width * cloud_filtered_voxel->height
               << " data points to demo.pcd." << std::endl;

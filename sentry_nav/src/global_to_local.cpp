@@ -50,7 +50,7 @@ public:
         // 如果找到了有效的目标点
         if (max_distance > 0) {
             goal_pose = goal_pose;  // 更新目标点
-            if(euclideanDistance(goal_pose,current_goal_pose)>0.05)
+            if(euclideanDistance(goal_pose,current_goal_pose)>0.15)
             {
             goal_pose_pub_.publish(goal_pose);
             current_goal_pose = goal_pose;

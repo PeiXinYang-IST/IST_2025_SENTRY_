@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2
   visualization_msgs
   bspline
-  message_generation
 )
 # Generate messages in the 'msg' folder
 add_message_files(

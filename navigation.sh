@@ -4,15 +4,16 @@
 set -e
 
 # 配置网络接口
-sudo ifconfig enp88s0 192.168.1.50
+sudo ifconfig enp86s0 192.168.1.50
 
 # 切换到脚本所在的目录
 cd "$(dirname "$0")"
 
 # 源catkin工作空间
-source /home/rm/catkin_livox_ros_driver2/devel/setup.sh
-
+# source /home/rm/catkin_livox_ros_driver2/devel/setup.sh
+source /home/rm-nuc13/IST_sentry_navigation/devel/setup.sh
 LIVOX_STARTED=0
+
 
 # 启动节点的函数
 restart_nodes() {
@@ -37,15 +38,16 @@ restart_nodes() {
     echo "Fast Lio relaunched with PID: $PID_FAST_LIO"
 
     sleep 1
-#real
-    roslaunch plan_manage real.launch &
-    PID_FAST_PLANNER=$!
-    echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
     # 启动NAV节点
     roslaunch sentry_nav sentry_movebase.launch &
     PID_NAV=$!
     echo "NAV relaunched with PID: $PID_NAV"
+ 
+    sleep 1
+    roslaunch plan_manage topo_replan.launch &
+    PID_FAST_PLANNER=$!
+    echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
     # 启动Serial节点
     # roslaunch sentry_serial serial.launch &
@@ -73,6 +75,8 @@ kill_processes() {
 
 # 首次启动所有节点
 restart_nodes
+
+fast_planner_started=false
 
 # 监听特定话题并检测特定信息
 echo "Monitoring topic /MY_ICP/restart for restart signal..."

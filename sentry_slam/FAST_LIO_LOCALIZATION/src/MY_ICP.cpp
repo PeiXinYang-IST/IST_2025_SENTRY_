@@ -30,6 +30,7 @@ MY_ICP::MY_ICP() : nh_("~"), private_node_("~"),
     icp_pub_ = nh_.advertise<std_msgs::Float32>("icp", 5);
     map_sub_ = nh_.subscribe("/map", 1, &MY_ICP::mappointCloudCallback, this);    
     odom_sub_ = nh_.subscribe("/odom", 1, &MY_ICP::odomCallback, this);
+    fast_planner_pub_ = nh_.advertise<std_msgs::Bool>("fast_planner_start", 5);
     // 启动发布线程
     publishThread_ = std::thread(&MY_ICP::publish_map_msg_thread, this);
 }
@@ -82,9 +83,9 @@ void MY_ICP::mappointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input
 //加载参数服务器
 void MY_ICP::Initparams()
 {
-    pcl::io::loadPCDFile<pcl::PointXYZ>("/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/PCD/demo.pcd", *prior_map_);
+    pcl::io::loadPCDFile<pcl::PointXYZ>("/home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/PCD/demo.pcd", *prior_map_);
     initial_pose = Eigen::Matrix4f::Identity(); //这里要对initial_pose进行初始化，不然就会寄（doge
-    private_node_.param<float>("find_min_angle",find_min_angle,9); //寻优最小角度设置 180/find_min_angle
+    private_node_.param<int>("find_min_angle",find_min_angle,9); //寻优最小角度设置 180/find_min_angle
     private_node_.param<float>("min_get_score",min_get_score,0.01); //最小获取寻优过程中增加的分数最小容忍度
     private_node_.param<float>("big_jump_yaw_score",big_jump_yaw_score,0.02); //在寻优过程中进行的大幅度跳跃分数阈值
     private_node_.param<float>("small_jump_yaw_score",small_jump_yaw_score,0.01); //在寻优过程中进行的小幅度跳跃分数阈值
@@ -98,6 +99,7 @@ void MY_ICP::Initparams()
     private_node_.param<float>("local_pointcloud_x",local_pointcloud_x_,0.10); //局部点云地图x
     private_node_.param<float>("local_pointcloud_y",local_pointcloud_y_,0.10); //局部点云地图y
     private_node_.param<float>("local_pointcloud_z",local_pointcloud_z_,0.10); //局部点云地图y
+    private_node_.param<float>("local_ground_pointcloud_z",local_ground_pointcloud_z_,0.10); //局部点云地图y
     // gicp.setInputTarget(prior_map_);
     // ndt.setInputTarget(prior_map_);
 }
@@ -116,7 +118,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MY_ICP::prior_map_deal(const pcl::PointCloud
     {
         if(input_cloud->points[i].x < fabs(local_pointcloud_x_+radar_position.x()) && 
         input_cloud->points[i].y < fabs(local_pointcloud_y_+radar_position.y()) &&
-        input_cloud->points[i].z < local_pointcloud_z_)
+        input_cloud->points[i].z < local_pointcloud_z_+radar_position.z() && 
+        input_cloud->points[i].z > local_ground_pointcloud_z_+radar_position.z())
         {
             // ROS_INFO("input_cloud : X:%f Y:%f Z:%f",input_cloud->points[i].x,input_cloud->points[i].y,input_cloud->points[i].z);
             cloud_filtered_local->points.push_back(input_cloud->points[i]);
@@ -191,23 +194,23 @@ void MY_ICP::get_lidar_cloud()
     }
     if(!saved_PCD && lidar_collect_times>save_lidar_times) //保存并且进行体素滤波和离群点滤波处理
     {
-    // 创建StatisticalOutlierRemoval滤波器对象
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    sor.setInputCloud(merged_cloud_);
-    sor.setMeanK(10); // 设置每个点的邻近点数
-    sor.setStddevMulThresh(1.0); // 设置标准偏差乘数阈值
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_sor(new pcl::PointCloud<pcl::PointXYZ>);
-    sor.filter(*cloud_filtered_sor);
+    // // 创建StatisticalOutlierRemoval滤波器对象
+    // pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    // sor.setInputCloud(merged_cloud_);
+    // sor.setMeanK(10); // 设置每个点的邻近点数
+    // sor.setStddevMulThresh(1.0); // 设置标准偏差乘数阈值
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_sor(new pcl::PointCloud<pcl::PointXYZ>);
+    // sor.filter(*cloud_filtered_sor);
 
     // 创建VoxelGrid滤波器对象
     pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-    voxel_grid.setInputCloud(cloud_filtered_sor);
+    voxel_grid.setInputCloud(merged_cloud_);
     voxel_grid.setLeafSize(0.05f, 0.05f, 0.05f); // 单位：m
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_voxel(new pcl::PointCloud<pcl::PointXYZ>);
     voxel_grid.filter(*cloud_filtered_voxel);
-
+    lidar_cloud_ = cloud_filtered_voxel;
     // 保存点云数据到PCD文件
-    if (pcl::io::savePCDFile<pcl::PointXYZ>("/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/PCD/my_lidar.pcd", *cloud_filtered_voxel) != -1) {
+    if (pcl::io::savePCDFile<pcl::PointXYZ>("/home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/PCD/my_lidar.pcd", *cloud_filtered_voxel) != -1) {
            std::cout << "save PCD!" << std::endl;
     }
         saved_PCD=true;
@@ -216,7 +219,7 @@ void MY_ICP::get_lidar_cloud()
 
 //点云接收回调
 void MY_ICP::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input) {
-    using namespace std::chrono_literals;
+    using namespace std::chrono_literals;    
     if(!transformed)
     pub_map_to_camera_init();
 
@@ -228,6 +231,7 @@ void MY_ICP::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input) {
         std::cerr << "Received empty point cloud!" << std::endl;
         return;
     }
+
     if(!saved_PCD)
     get_lidar_cloud();
 
@@ -235,9 +239,13 @@ void MY_ICP::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input) {
     {
     if(!icp_start)//创建单独寻优线程 仅在初始化时使用寻优
     {
-        if(pcl::io::loadPCDFile<pcl::PointXYZ>("/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/PCD/my_lidar.pcd", *lidar_cloud_)!=-1)
-        std::cout << "get lidar PCD!" << std::endl;   
+        auto start = std::chrono::high_resolution_clock::now();
         findBestYawAngle_thread();
+        auto end = std::chrono::high_resolution_clock::now();
+        // 计算耗时（以毫秒为单位）
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        // 输出耗时
+        std::cout << "程序运行耗时: " << duration.count() << " ms" << std::endl;
     }
 
     //这种写法在开启一段时间后自动崩溃，且重启的逻辑较为复杂，而且多线程在这里比较危险，不建议使用
@@ -293,7 +301,7 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
 
     ros::Time end_time=ros::Time::now();
     double duration = (end_time - start_time).toSec();  // 计算持续时间，单位为秒
-    ROS_WARN("ICP COST:%f",duration);
+    // ROS_WARN("ICP COST:%f",duration);
     if (gicp.hasConverged()) {
         // std::cout << "ICP converged with score: " << gicp.getFitnessScore() << std::endl;
         transform = gicp.getFinalTransformation(); // 获取变换矩阵   
@@ -320,8 +328,12 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
             move_base_start_pub_.publish(move_base_start_msg);
             move_base_start_msg.data=false;
             move_base_start_pub_.publish(move_base_start_msg);
-
             icp_transform_update=0;
+        }
+        if(icp_clear_costmap)
+        {
+        fast_planner_start_msg.data=true;
+        fast_planner_pub_.publish(fast_planner_start_msg);
         }
         
         remove_cloud_length = fmin(abs(40*(0.01-last_score)),0.4);   //一般配准好的时候大概是 0.005~0.001 左右 50*0.008=0.4 根据icp配准情况进行梯度设置搜索距离
@@ -388,62 +400,62 @@ void MY_ICP::publishTransform(const Eigen::Matrix4f& transform) {
 
 }
 
-void MY_ICP::findBestYawAngle(){
+void MY_ICP::findBestYawAngle() {
     const std::lock_guard<std::mutex> lock(findbestyaw_thread_mutex);
-    static float last_score;
-    pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp_yaw;
     float best_score = std::numeric_limits<float>::max();
     float best_yaw = 0.0;
     std::cout << "begin find" << std::endl;
 
-    for (float yaw = -M_PI; yaw <= M_PI; yaw += M_PI / find_min_angle) {
+    #pragma omp parallel for
+    for (int i = 0; i <= 2 * find_min_angle; ++i) {
+        float yaw = -M_PI + i * (M_PI / find_min_angle);
         Eigen::Matrix4f transformation = Eigen::Matrix4f::Identity();
         Eigen::Matrix3f rotation_matrix = Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ()).toRotationMatrix();
-        transformation.block<3,3>(0,0) = rotation_matrix;
-        pcl::transformPointCloud(*lidar_cloud_, *rotated_lidar_cloud_, transformation);
-        PointCloud<PointXYZ> aligned;
-        gicp_yaw.setInputSource(rotated_lidar_cloud_);
-        gicp_yaw.setInputTarget(prior_map_);
-        gicp_yaw.setEuclideanFitnessEpsilon(1e-5);	// 设置收敛条件是均方误差和小于阈值，停止迭代;
-        gicp_yaw.setMaximumIterations(find_best_yaw_icp_Iterations);
-        gicp_yaw.align(aligned);
-        std::cout << "yaw:" << yaw << " with score: " << gicp_yaw.getFitnessScore() << std::endl;
-        if (gicp_yaw.hasConverged()) {
-            float score = gicp_yaw.getFitnessScore();
-            if (score < best_score) {
-                best_score = score;
-                best_yaw = yaw;
-            }
+        transformation.block<3, 3>(0, 0) = rotation_matrix;
 
-            if(score-last_score>min_get_score)
+        // 旋转点云
+        pcl::PointCloud<pcl::PointXYZ> rotated_lidar_cloud;
+        pcl::transformPointCloud(*lidar_cloud_, rotated_lidar_cloud, transformation);
+        // 初始化 GICP 对象并设置目标点云
+        pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp_yaw;
+        gicp_yaw.setInputTarget(prior_map_);  // 将目标点云设置到循环外
+        gicp_yaw.setEuclideanFitnessEpsilon(1e-5);
+        gicp_yaw.setMaximumIterations(find_best_yaw_icp_Iterations);
+        // 设置源点云
+        gicp_yaw.setInputSource(rotated_lidar_cloud.makeShared());
+
+        // 执行配准
+        pcl::PointCloud<pcl::PointXYZ> aligned;
+        gicp_yaw.align(aligned);
+
+        // 获取配准分数
+        float score = gicp_yaw.getFitnessScore();
+        if (gicp_yaw.hasConverged()) {
+            #pragma omp critical
             {
-                yaw += M_PI / find_min_angle;
+                if (score < best_score) {
+                    best_score = score;
+                    best_yaw = yaw;
+                }
             }
-            last_score=score;
         }
-        if(gicp_yaw.getFitnessScore()>big_jump_yaw_score)//这里如果效果不好直接开始跳跃角度提升速度
-            yaw += M_PI / find_min_angle * 2;
-        if(gicp_yaw.getFitnessScore()>small_jump_yaw_score)//小幅度跳跃
-            yaw += M_PI / find_min_angle;
-         // 将旋转后的先验地图点云转换为ROS消息
-        pcl::toROSMsg(*rotated_lidar_cloud_, rotated_lidar_map_msg);
+
+        // 发布旋转后的点云
+        sensor_msgs::PointCloud2 rotated_lidar_map_msg;
+        pcl::toROSMsg(rotated_lidar_cloud, rotated_lidar_map_msg);
         rotated_lidar_map_msg.header.frame_id = "odom";
         rotated_lidar_map_msg.header.stamp = ros::Time::now();
-        // 发布旋转后的先验地图点云
         pub_rotated_lidar_cloud.publish(rotated_lidar_map_msg);
     }
 
-
     std::cout << "Best yaw angle: " << best_yaw << " with score: " << best_score << std::endl;
 
+    // 设置最佳角度和初始位姿
     best_yaw_angle_ = best_yaw;
-
-    // 设置初始位姿为 (0, 0, 0)  角度为最佳角度
     initial_pose.block<3, 3>(0, 0) = Eigen::AngleAxisf(best_yaw, Eigen::Vector3f::UnitZ()).toRotationMatrix();
     initial_pose.block<3, 1>(0, 3) = Eigen::Vector3f(0, 0, 0); // 设置位置为 (0, 0, 0)
-    icp_start=true;
+    icp_start = true;
 }
-
 /**
  * 对点云中障碍点进行剔除
  * cloud_map_msg为参考点云，cloud_msg为需要剔除障碍点的点云

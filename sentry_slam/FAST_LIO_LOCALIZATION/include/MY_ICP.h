@@ -84,6 +84,7 @@ private:
     sensor_msgs::PointCloud2 cloud_removed_msg;
     sensor_msgs::PointCloud2 local_pointcloud_msg;
     std_msgs::Bool move_base_start_msg;
+    std_msgs::Bool fast_planner_start_msg;
     pcl::GeneralizedIterativeClosestPoint<PointXYZ, PointXYZ> gicp;
     pcl::NormalDistributionsTransform<PointXYZ, PointXYZ> ndt;
     pcl::GeneralizedIterativeClosestPoint<PointXYZ, PointXYZ> icp;
@@ -98,13 +99,14 @@ private:
     float local_pointcloud_x_;
     float local_pointcloud_y_;
     float local_pointcloud_z_;
+    float local_ground_pointcloud_z_;
     bool need_relocalization; //如果需要进行重定位，则为true
     bool start_find;
     bool find_times;
     bool transformed;
     bool saved_PCD;
     bool finish_cut_cloud_;
-    float find_min_angle;
+    int find_min_angle;
     float min_get_score;
     float big_jump_yaw_score;
     float small_jump_yaw_score;
@@ -135,6 +137,7 @@ private:
     ros::Publisher removal_pointcloud_publisher_;
     ros::Publisher move_base_start_pub_;
     ros::Publisher local_pointcloud_pub_;
+    ros::Publisher fast_planner_pub_;
     ros::Subscriber pointcloud_sub;
     ros::Subscriber map_sub_;
     ros::Subscriber odom_sub_;

@@ -48,6 +48,9 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/PointField.h>
 #include <vector>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <visualization_msgs/Marker.h>
 
 class Obstacle_cloud_get
 {
@@ -63,12 +66,17 @@ class Obstacle_cloud_get
     void transformCallback(const geometry_msgs::TransformStampedConstPtr& input);
     void Init_params();
     void gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg);
+    void obstacle_cloud_get_pose();
+    void visual_centroid(const pcl::PointXYZ point);
+    void calculateYaw();
+    void moving_average_filter(const pcl::PointXYZ& new_centroid);
     private:
     // 创建RadiusOutlierRemoval对象
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
     pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
     bool getmap_;
     bool get_transform;
+    float yaw_angle;
     float clear_distance_x;
     float clear_distance_y;
     float clear_distance_z;
@@ -78,6 +86,7 @@ class Obstacle_cloud_get
     ros::Publisher pub_prior_map_;
     ros::NodeHandle nh_;
     ros::Publisher removal_pointcloud_publisher_;
+    ros::Publisher yaw_pub_;
     ros::Publisher incoming_pub_;
     ros::Publisher Obstacle_cloud_pub_;
     ros::Publisher Obstacle_cloud_pub_odom_;
@@ -87,21 +96,33 @@ class Obstacle_cloud_get
     ros::Subscriber odom_sub_;
     ros::Subscriber prior_map_sub_;
     ros::Subscriber grid_map_sub_;
+    ros::Publisher marker_pub;
+    ros::Publisher kdmeans_cloud_pub_;
 
+    std_msgs::Float32 yaw_msg;
     sensor_msgs::PointCloud2 prior_map_msg;
     sensor_msgs::PointCloud2 incoming_cloud_msg;
-    sensor_msgs::PointCloud2 cloud_removed_msg;
+    sensor_msgs::PointCloud2 real_obstacle_cloud_msg;
     sensor_msgs::PointCloud2 obstacle_cloud_msg;
     sensor_msgs::PointCloud2 world_obstacle_msg;
     sensor_msgs::PointCloud2 fast_planner_obstacle_msg;
+    sensor_msgs::PointCloud2 kdmeans_cloud_msg;
 
     Eigen::Matrix4f transform ;
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud_;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_radius;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr real_obstacle_cloud;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_removed;
     pcl::PointCloud<pcl::PointXYZ>::Ptr incoming_cloud_;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudTarget;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr Obstacle_cloud_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr map_cloud_; 
     pcl::PointCloud<pcl::PointXYZ>::Ptr world_Obstacle_cloud_;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr real_obstacle_filtered_cloud;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr kdmeans_cloud;
+    std::deque<pcl::PointXYZ> centroid_history_;
+    pcl::PointXYZ filtered_centroid_;
+    int filter_window_size_=5;
     Eigen::Vector3f radar_position; // 雷达位置
     Eigen::Matrix4f icp_transform_; 
 };

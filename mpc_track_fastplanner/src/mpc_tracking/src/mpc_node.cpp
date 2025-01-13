@@ -8,15 +8,19 @@
 #include "bspline/non_uniform_bspline.h"
 #include "mpc_tracking/Bspline.h"
 #include "std_msgs/Empty.h"
-
+#include "std_msgs/Bool.h"
 #include "mpc_tracking/mpc.h"
+#include "math.h"
+#include <sentry_serial/navigation.h>
+ros::Publisher navigation_pub;
+sentry_serial::navigation navigation;
 
 // #define BACKWARD_HAS_DW 1
 // #include "backward.hpp"
 // namespace backward{
 //     backward::SignalHandling sh;
 // }
-
+double yaw_angle;
 using fast_planner::NonUniformBspline;
 
 ros::Publisher cmd_vel_pub, motion_path_pub, predict_path_pub;
@@ -25,6 +29,7 @@ nav_msgs::Odometry odom;
 
 nav_msgs::Path global_path_;
 bool get_path_=false;
+bool mpc_start=false;
 bool receive_traj = false;
 vector<NonUniformBspline> traj;
 double traj_duration;
@@ -98,18 +103,25 @@ void pathCallback(const nav_msgs::Path::ConstPtr& msg) {
   get_path_ = true;
 }
 
-void odomCallback(const nav_msgs::Odometry &msg) {
-  // if(get_path_){
-    odom = msg;
-//sim
-    current_state(0) = msg.pose.pose.position.x;
-    current_state(1) = msg.pose.pose.position.y;
-    current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
-//real
-    // current_state(0) = global_path_.poses[0].pose.position.x;
-    // current_state(1) = global_path_.poses[0].pose.position.y;
-    // current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
+void start_task(const std_msgs::Bool::ConstPtr& msg){
+  mpc_start = true;
+}
 
+void odomCallback(const nav_msgs::Odometry &msg) {
+  if(get_path_ && mpc_start){
+  // ROS_WARN("2222222222");
+  odom = msg;
+//sim
+    // current_state(0) = msg.pose.pose.position.x;
+    // current_state(1) = msg.pose.pose.position.y;
+    // current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
+//real
+    global_path_.header.frame_id = "odom";
+    global_path_.header.stamp = ros::Time::now();
+    current_state(0) = global_path_.poses[0].pose.position.x-0.09;
+    current_state(1) = global_path_.poses[0].pose.position.y;
+    current_state(2) = 0.0;
+    // current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
     //double yaw1 = tf2::getYaw(msg.pose.pose.orientation);
     // Eigen::Quaterniond quaternion;
     // quaternion.x() = msg.pose.pose.orientation.x;
@@ -124,7 +136,7 @@ void odomCallback(const nav_msgs::Odometry &msg) {
     cout << "yaw1:" << current_state(2) << endl;
     //cout << "yaw2:" << yaw2 << endl;
   }
-// }
+}
 
 void publish_control_cmd(const ros::TimerEvent &e) {
     if (!receive_traj) return;
@@ -193,12 +205,27 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     geometry_msgs::Twist cmd;
     cmd.linear.x = result[0];
     cmd.linear.y = result[1];
-    // cmd.angular.z = result[1];
+    double dx = current_state(0) - global_path_.poses.back().pose.position.x;
+    double dy = current_state(1) - global_path_.poses.back().pose.position.y;
+
+    // if(std::sqrt(dx * dx + dy * dy) < 0.5)
+    // cmd.angular.z = 1.5;
+
+    // if(std::sqrt(dx * dx + dy * dy) < 1.2)
+    // cmd.angular.z = 1.0;   
+    cmd.angular.z =0.0;   
+
     // cmd.linear.x = (cmd.linear.x * cos(current_state(2)) + cmd.linear.y * sin(current_state(2)));
     // cmd.linear.y = (- cmd.linear.x * sin(current_state(2)) + cmd.linear.y * cos(current_state(2)));
 
     cmd_vel_pub.publish(cmd);
     //cout << "u:" << result[0] << " " << "r:" << result[1] << endl;
+
+    navigation.yaw.data=yaw_angle;
+	  navigation.x.data=cmd.linear.x;
+	  navigation.y.data=cmd.linear.y;
+	  navigation.z.data=cmd.angular.z;
+	  navigation_pub.publish(navigation);
 
     predict_path.header.frame_id = "odom";
     predict_path.header.stamp = ros::Time::now();
@@ -210,17 +237,19 @@ void publish_control_cmd(const ros::TimerEvent &e) {
         predict_path.poses.push_back(pose_msg);
     }
     predict_path_pub.publish(predict_path);
-    
     predict_path.poses.clear();
 }
 
+void yaw_callback(const std_msgs::Float32& msg)
+{
+	yaw_angle = msg.data;
+}
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "mpc_tracking_node");
     ros::NodeHandle nh;
-
-    cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
+    cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/mpc_cmd_vel", 1);
     predict_path_pub = nh.advertise<nav_msgs::Path>("/predict_path", 1);
     motion_path_pub = nh.advertise<nav_msgs::Path>("/motion_path", 1);
    
@@ -228,6 +257,9 @@ int main(int argc, char **argv)
     ros::Subscriber bspline_sub = nh.subscribe("planning/bspline", 10, bsplineCallback);
     ros::Subscriber replan_sub = nh.subscribe("planning/replan", 10, replanCallback);
     ros::Subscriber path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, pathCallback);
+    ros::Subscriber fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, start_task);
+    navigation_pub = nh.advertise<sentry_serial::navigation>("navigation",10);
+    ros::Subscriber yaw_sub = nh.subscribe("Obstacle_cloudget/yaw_angle", 1000, yaw_callback); 
 
     control_cmd_pub = nh.createTimer(ros::Duration(0.1), publish_control_cmd);
     

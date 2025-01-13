@@ -13,12 +13,10 @@ Panels:
         - /Odometry1/Odometry1/Covariance1
         - /Odometry1/Odometry1/Covariance1/Position1
         - /Odometry1/Odometry1/Covariance1/Orientation1
-        - /Localization1
         - /Localization1/cur_scan_in_map1
-        - /Localization1/submap_in_FOV1
         - /Localization1/localization1/Shape1
         - /MarkerArray1/Namespaces1
-        - /Pose1
+        - /PointCloud21
         - /PointCloud22/Autocompute Value Bounds1
         - /Marker3/Namespaces1
       Splitter Ratio: 0.6352941393852234
@@ -40,7 +38,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -72,7 +70,7 @@ Visualization Manager:
       Length: 0.699999988079071
       Name: Axes
       Radius: 0.05999999865889549
-      Reference Frame: body
+      Reference Frame: laser_scan
       Show Trail: false
       Value: true
     - Class: rviz/Group
@@ -218,7 +216,7 @@ Visualization Manager:
           Color: 239; 41; 41
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -229,11 +227,11 @@ Visualization Manager:
           Size (Pixels): 2
           Size (m): 0.30000001192092896
           Style: Points
-          Topic: /MY_ICP/local_cloud
+          Topic: /MY_ICP/icp_prior_map
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 0.5
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -436,8 +434,9 @@ Visualization Manager:
           body_foot:
             odom:
               camera_init:
-                laser_scan:
-                  {}
+                {}
+          laser_scan:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -485,10 +484,10 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 4
+      Size (Pixels): 6
       Size (m): 0.019999999552965164
       Style: Points
-      Topic: /processed_cloud
+      Topic: /Obstacle_cloudget/real_obstacle_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -496,8 +495,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.44999998807907104
-        Min Value: 0.05000000074505806
+        Max Value: 0.4749999940395355
+        Min Value: 0.02500000037252903
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -505,7 +504,7 @@ Visualization Manager:
       Color: 0; 255; 0
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 0; 255; 0
       Min Color: 20; 249; 249
@@ -520,7 +519,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /planning_vis/trajectory
@@ -659,6 +658,42 @@ Visualization Manager:
       Unreliable: false
       Use Timestamp: false
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.10000000149011612
+      Style: Flat Squares
+      Topic: /Obstacle_cloudget/kdmeans_cloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /Obstacle_cloudget/visualization_marker
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -687,7 +722,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 38.93601608276367
+      Distance: 9.388941764831543
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -695,17 +730,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.00992666557431221
-        Y: -1.7231022119522095
-        Z: -0.834469199180603
+        X: 0.6213520169258118
+        Y: -0.3445662558078766
+        Z: -1.0171689987182617
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2547966241836548
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
-      Yaw: 2.271080732345581
+      Yaw: 4.6511101722717285
     Saved: ~
 Window Geometry:
   Displays:

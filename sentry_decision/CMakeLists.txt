@@ -1,24 +1,24 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(sentry_decision)
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)" )
-  include(ProcessorCount)
-  ProcessorCount(N)
-  message("Processer number:  ${N}")
-  if(N GREATER 4)
-    add_definitions(-DMP_EN)
-    add_definitions(-DMP_PROC_NUM=3)
-    message("core for MP: 3")
-  elseif(N GREATER 3)
-    add_definitions(-DMP_EN)
-    add_definitions(-DMP_PROC_NUM=2)
-    message("core for MP: 2")
-  else()
-    add_definitions(-DMP_PROC_NUM=1)
-  endif()
-else()
-  add_definitions(-DMP_PROC_NUM=1)
-endif()
+# if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)" )
+#   include(ProcessorCount)
+#   ProcessorCount(N)
+#   message("Processer number:  ${N}")
+#   if(N GREATER 4)
+#     add_definitions(-DMP_EN)
+#     add_definitions(-DMP_PROC_NUM=3)
+#     message("core for MP: 3")
+#   elseif(N GREATER 3)
+#     add_definitions(-DMP_EN)
+#     add_definitions(-DMP_PROC_NUM=2)
+#     message("core for MP: 2")
+#   else()
+#     add_definitions(-DMP_PROC_NUM=1)
+#   endif()
+# else()
+#   add_definitions(-DMP_PROC_NUM=1)
+# endif()
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -30,7 +30,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  tf
+  pcl_ros
+  geometry_msgs
+  nav_msgs
+  sensor_msgs
 )
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -135,7 +141,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 

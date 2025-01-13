@@ -4,13 +4,13 @@
 set -e
 
 # 配置网络接口
-sudo ifconfig enp88s0 192.168.1.50
+sudo ifconfig enp86s0 192.168.1.50
 
 # 切换到脚本所在的目录
 cd "$(dirname "$0")"
 
 # 源catkin工作空间
-source /home/rm/catkin_livox_ros_driver2/devel/setup.sh
+source /home/rm-nuc13/IST_sentry_navigation/devel/setup.sh
 
 # 启动livox_ros_driver2节点
 roslaunch livox_ros_driver2 msg_MID360.launch &
@@ -30,8 +30,8 @@ echo "Fast Lio launched with PID: $PID_FAST_LIO"
 # 定义保存地图的函数
 function save_map {
     echo "Saving map..."
-    rosrun map_server map_saver map:=/projected_map -f /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/Map/demo2
-    rosrun octomap_server octomap_saver -f /home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/Map/octomap.bt
+    rosrun map_server map_saver map:=/projected_map -f /home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/Map/demo2
+    rosrun octomap_server octomap_saver -f /home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/Map/octomap.bt
     echo "Map saved."
 }
 

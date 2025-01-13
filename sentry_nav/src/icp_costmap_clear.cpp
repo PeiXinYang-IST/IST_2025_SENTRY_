@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>  // 确保引入正确的服务类型
+#include <thread>
 
 class ClearGlobalCostmapNode {
 public:
@@ -35,14 +36,24 @@ public:
     }
 
     void clearCostmap() {
-        std_srvs::Empty srv;  // 使用 std_srvs::Empty
+        std::thread clear_thread(&ClearGlobalCostmapNode::map_clear_thread, this);
+        clear_thread.join(); //阻塞主线程
+    }
+
+    void map_clear_thread()
+    {
+        while(ros::ok())
+        {
+            std_srvs::Empty srv;  // 使用 std_srvs::Empty
         if (clear_costmap_client_.call(srv)) {
             ROS_INFO("Global costmap cleared.");
         } else {
             ROS_ERROR("Failed to clear global costmap.");
         }
+            ros::Duration(0.5).sleep();  //1hz
+        }
     }
-
+    
 private:
     ros::Subscriber move_base_start_sub_;
     ros::Subscriber pid_clear_costmap_sub_;
