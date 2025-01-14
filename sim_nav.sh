@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Source ROS workspace setup script
-source /home/rm/catkin_livox_ros_driver2/devel/setup.sh
+source /home/rm-nuc13/IST_sentry_navigation/devel/setup.sh
 
 # Launch omni_gazebo gazebo
 roslaunch simple_meca_car gazebo.launch &

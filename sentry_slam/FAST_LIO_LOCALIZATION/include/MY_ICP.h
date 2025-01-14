@@ -35,6 +35,11 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <geometry_msgs/TransformStamped.h>
+#include "small_gicp/ann/kdtree_omp.hpp"
+#include "small_gicp/factors/gicp_factor.hpp"
+#include "small_gicp/pcl/pcl_point.hpp"
+#include "small_gicp/registration/reduction_omp.hpp"
+#include "small_gicp/registration/registration.hpp"
 
 using namespace pcl;
 using namespace std;
@@ -88,6 +93,11 @@ private:
     pcl::GeneralizedIterativeClosestPoint<PointXYZ, PointXYZ> gicp;
     pcl::NormalDistributionsTransform<PointXYZ, PointXYZ> ndt;
     pcl::GeneralizedIterativeClosestPoint<PointXYZ, PointXYZ> icp;
+
+    std::shared_ptr<
+    small_gicp::Registration<small_gicp::GICPFactor, small_gicp::ParallelReductionOMP>>
+    register_;
+    
     std::mutex global_mutex_;
     Eigen::Matrix4f initial_pose;
     Eigen::Matrix4f icp_transform = Eigen::Matrix4f::Identity();

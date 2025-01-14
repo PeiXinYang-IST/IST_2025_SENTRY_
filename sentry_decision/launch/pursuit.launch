@@ -1,0 +1,5 @@
+<launch>
+
+<node pkg="sentry_decision" type="pursuit" name="pursuit" output="screen" respawn="true" />
+
+</launch>

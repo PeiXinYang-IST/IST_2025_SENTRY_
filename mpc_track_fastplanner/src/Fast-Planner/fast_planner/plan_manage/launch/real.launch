@@ -80,6 +80,7 @@
     <remap from="~goal" to="/move_base_simple/goal"/>
     <!-- /Graph/nav_pose   /move_base_simple/goal-->  
     <!-- goal_pose -->
+    <!-- fast_planner_pursuit -->
     <remap from="~traj_start_trigger" to="/traj_start_trigger" />
     <param name="waypoint_type" value="manual-lonely-waypoint"/>    
   </node>  

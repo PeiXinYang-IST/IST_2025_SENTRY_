@@ -26,8 +26,8 @@ world_Obstacle_cloud_(new pcl::PointCloud<pcl::PointXYZ>)
     grid_map_sub_ = nh_.subscribe("/prior_map",  1, &Obstacle_cloud_get::gridmapCallback, this);
     marker_pub = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
     kdmeans_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("kdmeans_cloud", 1);
+    pursuit_position_pub_ = nh_.advertise<geometry_msgs::Point>("pursuit_position", 1);
     Init_params();
-
     icp_transform_ = Eigen::Matrix4f::Identity();
 }
 
@@ -297,7 +297,7 @@ void Obstacle_cloud_get::obstacle_cloud_get_pose()
     // 设置聚类算法的参数
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
     ec.setClusterTolerance(0.05); // 3cm
-    ec.setMinClusterSize(10);
+    ec.setMinClusterSize(15);
     ec.setMaxClusterSize(25000);
     ec.setSearchMethod(tree);
     ec.setInputCloud(real_obstacle_filtered_cloud);
@@ -345,6 +345,10 @@ for (const auto& indices : cluster_indices) {
     calculateYaw();
     // visual_centroid(odom_point);
     visual_centroid(filtered_centroid_);
+    pursuit_position.x = filtered_centroid_.x;
+    pursuit_position.y = filtered_centroid_.y;
+    pursuit_position.z = 0.0;
+    pursuit_position_pub_.publish(pursuit_position);
 }
 }
 

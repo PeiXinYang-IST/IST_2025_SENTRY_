@@ -98,7 +98,8 @@ class Obstacle_cloud_get
     ros::Subscriber grid_map_sub_;
     ros::Publisher marker_pub;
     ros::Publisher kdmeans_cloud_pub_;
-
+    ros::Publisher pursuit_position_pub_;
+    geometry_msgs::Point pursuit_position;
     std_msgs::Float32 yaw_msg;
     sensor_msgs::PointCloud2 prior_map_msg;
     sensor_msgs::PointCloud2 incoming_cloud_msg;
