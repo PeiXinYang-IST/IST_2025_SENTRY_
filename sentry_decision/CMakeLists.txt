@@ -141,8 +141,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
   ${catkin_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include  # 如果头文件放在 include 目录下
 )
 
 ## Declare a C++ library
@@ -161,6 +161,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/sentry_decision_node.cpp)
 add_executable(random_deci src/random_deci.cpp)
 add_executable(pursuit src/pursuit.cpp)
+add_executable(decision src/decision.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -181,7 +182,9 @@ target_link_libraries(random_deci
 target_link_libraries(pursuit
   ${catkin_LIBRARIES}
 )
-
+target_link_libraries(decision
+  ${catkin_LIBRARIES}
+)
 #############
 ## Install ##
 #############

@@ -12,16 +12,13 @@ public:
         // 初始化节点
         ros::NodeHandle nh;
 
-
         // 订阅 move_base_start 话题
         move_base_start_sub_ = nh.subscribe("MY_ICP/move_base_start", 10, &ClearGlobalCostmapNode::moveBaseStartCallback, this);
         pid_clear_costmap_sub_ = nh.subscribe("/pid_follow/pid_clear_costmap", 10, &ClearGlobalCostmapNode::pidclearcostmapCallback, this);
         // 创建 ClearCostmap 服务客户端
         clear_costmap_client_ = nh.serviceClient<std_srvs::Empty>("/move_base1/clear_costmaps");
         global_path_sub = nh.subscribe<nav_msgs::Path>("/move_base1/NavfnROS/plan", 10, &ClearGlobalCostmapNode::globalPathCallback, this);
-
     }
-
 
     void globalPathCallback(const nav_msgs::Path::ConstPtr& msg) {
         global_path_ = *msg;
@@ -54,7 +51,7 @@ public:
         while(ros::ok())
         {
             static int check_path;
-            if(++check_path>=20 && plan_) //2s检查一次
+            if(++check_path>=10 && plan_) //1s检查一次
         {
             if(global_path_.poses.empty())
             {

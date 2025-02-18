@@ -51,6 +51,13 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <visualization_msgs/Marker.h>
+#include <std_msgs/String.h>
+
+enum NavigationMode {
+    PURSUIT,
+    LOCAL_PATROLLING,
+    GLOBAL_PATROLLING
+};
 
 class Obstacle_cloud_get
 {
@@ -70,6 +77,7 @@ class Obstacle_cloud_get
     void visual_centroid(const pcl::PointXYZ point);
     void calculateYaw();
     void moving_average_filter(const pcl::PointXYZ& new_centroid);
+    void navigationModeCallback(const std_msgs::Bool::ConstPtr& msg);
     private:
     // 创建RadiusOutlierRemoval对象
     pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
@@ -99,7 +107,10 @@ class Obstacle_cloud_get
     ros::Publisher marker_pub;
     ros::Publisher kdmeans_cloud_pub_;
     ros::Publisher pursuit_position_pub_;
-    geometry_msgs::Point pursuit_position;
+    ros::Publisher pursuit_pub_;
+    ros::Subscriber navigation_mode_sub;
+    bool pursuit_mode_enabled;
+    geometry_msgs::PoseStamped pursuit_position;
     std_msgs::Float32 yaw_msg;
     sensor_msgs::PointCloud2 prior_map_msg;
     sensor_msgs::PointCloud2 incoming_cloud_msg;
@@ -123,7 +134,10 @@ class Obstacle_cloud_get
     pcl::PointCloud<pcl::PointXYZ>::Ptr kdmeans_cloud;
     std::deque<pcl::PointXYZ> centroid_history_;
     pcl::PointXYZ filtered_centroid_;
-    int filter_window_size_=5;
+    int filter_window_size_=1;
+    float save_obstacle_cloud_time_;
     Eigen::Vector3f radar_position; // 雷达位置
     Eigen::Matrix4f icp_transform_; 
+    pcl::PointXYZ nearest_centroid;
+
 };

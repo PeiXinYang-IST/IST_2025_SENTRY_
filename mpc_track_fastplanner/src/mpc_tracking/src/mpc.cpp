@@ -1,6 +1,6 @@
 #include "mpc_tracking/mpc.h"
 #include <cppad/ipopt/solve.hpp>
-
+#include <ros/ros.h>
 using CppAD::AD;
 
 const int N = 30;
@@ -20,9 +20,12 @@ class FG_eval
 {
 public:
     Eigen::MatrixXd desired_state_;
-    
-    FG_eval(Eigen::MatrixXd desired_state) {
+    double car_obstacle_dist;
+    Eigen::Vector2d gradient_; // 新增梯度方向成员变量
+    FG_eval(Eigen::MatrixXd desired_state,double dist,Eigen::Vector2d gradient) {
         desired_state_ = desired_state;
+        car_obstacle_dist = dist;
+        gradient_ = gradient; // 初始化梯度方向
     }
     typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
 
@@ -31,8 +34,8 @@ public:
         fg[0] = 0;
 
         //weights
-        const int x_weight = 10;
-        const int y_weight = 10;
+        const int x_weight = 15;
+        const int y_weight = 15;
         const int psi_weight =0;
         const int u_weight = 1;
         const int v_weight = 1;
@@ -51,7 +54,13 @@ public:
             fg[0] += u_weight * CppAD::pow(vars[u_start + i ] , 2);
             fg[0] += v_weight * CppAD::pow(vars[v_start + i ] , 2);
         }
-
+        // 新增避障速度方向约束
+    for (int i = 0; i < N-1; ++i) {
+        AD<double> u_i = vars[u_start + i];
+        AD<double> v_i = vars[v_start + i];
+        AD<double> projection = (u_i * gradient_.x() + v_i * gradient_.y());//*car_obstacle_dist;
+        fg[1 + 3*N + i] = projection; // 约束为投影>=0
+    }
         fg[1 + x_start] = vars[x_start];
         fg[1 + y_start] = vars[y_start];
         fg[1 + psi_start] = vars[psi_start];
@@ -73,12 +82,10 @@ public:
             fg[1 + y_start + i] = y_1 - (y_0 + (u_0 * CppAD::sin(psi_0) + v_0 * CppAD::cos(psi_0)) * dt);
             fg[1 + psi_start + i] = psi_1 - (psi_0 + r_0 * dt);
         }
-        
     }
-     
 };
 
-vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state) {
+vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state,double dist,Eigen::Vector2d gradient,double safe_distance) {
     bool ok = true;
     typedef CPPAD_TESTVECTOR(double) Dvector;
 
@@ -87,8 +94,7 @@ vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state) 
     double psi = state(2);
 
     int n_var = N * 3 + (N - 1) * 3;
-    int n_constraints = N * 3;
-
+    int n_constraints = N * 3 + (N - 1); // 原3N个等式约束 + (N-1)个不等式约束
     Dvector vars(n_var);
     for (int i = 0; i < n_var; ++i) {
         vars[i] = 0.0;
@@ -114,22 +120,37 @@ vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state) 
         vars_upperbound[i] = 1;
     }
 
-    Dvector constraints_lowerbound(n_constraints);
-    Dvector constraints_upperbound(n_constraints);
+Dvector constraints_lowerbound(n_constraints);
+Dvector constraints_upperbound(n_constraints);
 
-    for (int i = 0; i < n_constraints; ++i) {
-        constraints_lowerbound[i] = 0;
-        constraints_upperbound[i] = 0;
+// 原等式约束上下界设为0
+for (int i = 0; i < 3*N; ++i) {
+    constraints_lowerbound[i] = 0;
+    constraints_upperbound[i] = 0;
+}
+
+// 新增不等式约束的上下界
+for (int i = 3*N; i < n_constraints; ++i) {
+    // 当距离小于安全距离时施加约束，否则放宽约束
+    if (dist < safe_distance) {
+        constraints_lowerbound[i] = 0.0; // 速度投影必须非负
+        constraints_upperbound[i] = 1e19;
+        ROS_WARN("HEAD!!!");
+    } else {
+        constraints_lowerbound[i] = -1e19; // 无约束
+        constraints_upperbound[i] = 1e19;
     }
+}
 
-    constraints_lowerbound[x_start] = x;
-    constraints_lowerbound[y_start] = y;
-    constraints_lowerbound[psi_start] = psi;
-    constraints_upperbound[x_start] = x;
-    constraints_upperbound[y_start] = y;
-    constraints_upperbound[psi_start] = psi;
+// 初始状态约束保持不变
+constraints_lowerbound[x_start] = x;
+constraints_lowerbound[y_start] = y;
+constraints_lowerbound[psi_start] = psi;
+constraints_upperbound[x_start] = x;
+constraints_upperbound[y_start] = y;
+constraints_upperbound[psi_start] = psi;
 
-    FG_eval fg_eval(desired_state);
+    FG_eval fg_eval(desired_state,dist,gradient);
 
     string options;
     options += "Integer print_level 0\n";

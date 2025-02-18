@@ -11,7 +11,7 @@
 #include <plan_env/edt_environment.h>
 
 #include <plan_manage/plan_container.hpp>
-
+#include <std_msgs/Float64.h>
 #include <ros/ros.h>
 
 namespace fast_planner {
@@ -37,13 +37,14 @@ public:
   void setGlobalWaypoints(vector<Eigen::Vector3d>& waypoints);
 
   bool checkTrajCollision(double& distance);
-
+  ros::Publisher dist_pub_;
   PlanParameters pp_;
   LocalTrajData local_data_;
   GlobalTrajData global_data_;
   MidPlanData plan_data_;
   EDTEnvironment::Ptr edt_environment_;
-
+  ros::Publisher grad_pub_;
+  ros::Subscriber odom_sub;
 private:
   /* main planning algorithms & modules */
   SDFMap::Ptr sdf_map_;
@@ -72,8 +73,8 @@ private:
 
   // heading planning
   void calcNextYaw(const double& last_yaw, double& yaw);
-
-  // !SECTION stable
+  void odomCallback(const nav_msgs::Odometry &msg);
+    // !SECTION stable
 
   // SECTION developing
 

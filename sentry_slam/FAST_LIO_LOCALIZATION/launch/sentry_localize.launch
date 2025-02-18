@@ -55,10 +55,8 @@
 	<include file="$(find fast_lio_localization)/launch/icp.launch">
 	</include>
 
-    <node pkg="fast_lio_localization" type="Obstacle_cloudget" name="Obstacle_cloudget" output="screen">
-		<param name="kdtree_search_radius" value="0.02"/>
-		<param name="filter_search_radius" value="0.15"/>
-	</node>
+	<include file="$(find fast_lio_localization)/launch/Obstacle_cloudget.launch">
+	</include>
  
 	<!-- 发布一个雷达body到机器人足端body_foot的静态映射 -->
 	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_1" args="0 0 0.35 0 0 0 body body_foot" />

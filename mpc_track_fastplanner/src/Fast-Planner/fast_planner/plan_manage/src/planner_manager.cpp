@@ -30,6 +30,10 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   nh.param("manager/use_topo_path", use_topo_path, false);
   nh.param("manager/use_optimization", use_optimization, false);
 
+  odom_sub = nh.subscribe("/odom", 1, &FastPlannerManager::odomCallback,this);
+  grad_pub_ = nh.advertise<geometry_msgs::Vector3>("/grad", 100); //这里设置的是esdf地图的梯度向量
+  dist_pub_ = nh.advertise<std_msgs::Float64>("/dist", 10);
+
   local_data_.traj_id_ = 0;
   sdf_map_.reset(new SDFMap);
   sdf_map_->initMap(nh);
@@ -66,6 +70,27 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   }
 }
 
+nav_msgs::Odometry odom;
+Eigen::Vector3d odom_pos;
+void FastPlannerManager::odomCallback(const nav_msgs::Odometry &msg) {
+
+  odom_pos[0] = msg.pose.pose.position.x;
+  odom_pos[1] = msg.pose.pose.position.y;
+  odom_pos[2] = msg.pose.pose.position.z;
+
+  double mpc_dist;
+  Eigen::Vector3d mpc_grad;
+  edt_environment_->evaluateEDTWithGrad(odom_pos, -1.0, mpc_dist, mpc_grad);
+  if (mpc_grad.norm() > 1e-4) mpc_grad.normalize();
+  geometry_msgs::Vector3 grad_msg;
+  grad_msg.x = mpc_grad.x();
+  grad_msg.y = mpc_grad.y();
+  grad_msg.z = mpc_grad.z();
+  grad_pub_.publish(grad_msg);
+  // ROS_WARN("grad_msg.x:%f",grad_msg.x);
+  // ROS_WARN("grad_msg.y:%f",grad_msg.y);
+}
+
 void FastPlannerManager::setGlobalWaypoints(vector<Eigen::Vector3d>& waypoints) {
   plan_data_.global_waypoints_ = waypoints;
 }
@@ -86,6 +111,15 @@ bool FastPlannerManager::checkTrajCollision(double& distance) {
     fut_pt = local_data_.position_traj_.evaluateDeBoor(tm + t_now + fut_t);
 
     double dist = edt_environment_->evaluateCoarseEDT(fut_pt, -1.0);
+    // 获取机器人当前位置
+    Eigen::Vector3d cur_pt;
+    cur_pt.x() = odom_pos[0];
+    cur_pt.y() = odom_pos[1];
+    cur_pt.z() = odom_pos[2];
+    double car_obstacle_dist = edt_environment_->evaluateCoarseEDT(cur_pt, -1.0);
+    std_msgs::Float64 dist_msg;
+    dist_msg.data = car_obstacle_dist;
+    dist_pub_.publish(dist_msg);
     if (dist < 0.1) {
       distance = radius;
       return false;
@@ -157,9 +191,30 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
 
   // parameterize the path to bspline
 
-  double                  ts = pp_.ctrl_pt_dist / pp_.max_vel_;
+  double ts = pp_.ctrl_pt_dist / pp_.max_vel_;
   vector<Eigen::Vector3d> point_set, start_end_derivatives;
   kino_path_finder_->getSamples(ts, point_set, start_end_derivatives);
+
+  // point_set[0] = Eigen::Vector3d(0.0, 0.0, 0.0);
+  // point_set[1] = Eigen::Vector3d(0.4, 0.6, 0.0);
+  // point_set[2] = Eigen::Vector3d(0.7, 0.8, 0.0);
+  // point_set[3] = Eigen::Vector3d(1.0, 1.45, 0.0);
+  // point_set[4] = Eigen::Vector3d(1.65, 1.67, 0.0);
+  // point_set[5] = Eigen::Vector3d(1.60, 1.80, 0.0);
+  // point_set[6] = Eigen::Vector3d(2.70, 2.75, 0.0);
+  // point_set[7] = Eigen::Vector3d(3.30, 3.50, 0.0);
+  // point_set[8] = Eigen::Vector3d(3.50, 4.30, 0.0);
+  // point_set[9] = Eigen::Vector3d(2.45, 5.2, 0.0);
+  // point_set[10] = Eigen::Vector3d(0.50, 0.20, 0.0);
+  // point_set[11] = Eigen::Vector3d(0.92, 0.2, 0.0);
+  // point_set[12] = Eigen::Vector3d(1.5, 0.3, 0.0);
+  // point_set[13] = Eigen::Vector3d(1.7, 0.45, 0.0);
+  // point_set[14] = Eigen::Vector3d(2.0, 0.67, 0.0);
+  // point_set[15] = Eigen::Vector3d(1.9, 0.80, 0.0);
+  // point_set[16] = Eigen::Vector3d(2.3, 0.75, 0.0);
+  // point_set[17] = Eigen::Vector3d(2.50, 0.50, 0.0);
+  // point_set[18] = Eigen::Vector3d(2.80, 0.90, 0.0);
+  // point_set[19] = Eigen::Vector3d(3.45, 0.5, 0.0);
 
   Eigen::MatrixXd ctrl_pts;
   NonUniformBspline::parameterizeToBspline(ts, point_set, start_end_derivatives, ctrl_pts);

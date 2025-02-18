@@ -87,7 +87,15 @@
         "geometry": "cpp",
         "regex": "cpp",
         "forward_list": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "coroutine": "cpp",
+        "source_location": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "specialfunctions": "cpp"
     },
     "cmake.sourceDirectory": "/home/rm/catkin_livox_ros_driver2/src/IST_2025_sentry/catkin_simple"
 }

@@ -92,16 +92,28 @@ void yaw_callback(const std_msgs::Float32& msg)
 	yaw = msg.data;
 }
 
-void cmd_vel_callback(const geometry_msgs::Twist& cmd_vel)
+void mpc_cmd_vel_callback(const geometry_msgs::Twist& cmd_vel)
 {
 	cmd_vel_x=cmd_vel.linear.x;
 	cmd_vel_y=cmd_vel.linear.y;
 	cmd_vel_z=cmd_vel.angular.z;
-	serial_package.header = 'I';
 
 	serial_package.linear_x = -cmd_vel_x*0.4;
     serial_package.linear_y = cmd_vel_y*0.4;
     serial_package.angular_z = cmd_vel_z*0.5;
+	
+    // ROS_INFO("\nSend date finished!\n");
+}
+
+void pid_cmd_vel_callback(const geometry_msgs::Twist& cmd_vel)
+{
+	cmd_vel_x=cmd_vel.linear.x;
+	cmd_vel_y=cmd_vel.linear.y;
+	cmd_vel_z=cmd_vel.angular.z;
+
+	serial_package.linear_x = cmd_vel_x;
+    serial_package.linear_y = cmd_vel_y;
+    serial_package.angular_z = cmd_vel_z;
 	
     // ROS_INFO("\nSend date finished!\n");
 }
@@ -164,7 +176,9 @@ int main(int argc, char **argv)
     // 创建一个Subscriber，订阅名为smooth_cmd_cel的topic，注册回调函数chatterCallback 
     ros::Subscriber sub = nh.subscribe(cmd_vel_topic, 1000, callback); 
     ros::Subscriber restart_sub = nh.subscribe("MY_ICP/restart", 1000, restart_callback); 
-    ros::Subscriber mpc_sub = nh.subscribe("mpc_cmd_vel", 1000, cmd_vel_callback); 
+    ros::Subscriber mpc_sub = nh.subscribe("mpc_cmd_vel", 1000, mpc_cmd_vel_callback); 
+    ros::Subscriber pid_sub = nh.subscribe("pid_cmd_vel", 1000, pid_cmd_vel_callback); 
+
     ros::Subscriber odom_sub = nh.subscribe("odom", 1000, odom_callback); 
     ros::Subscriber yaw_sub = nh.subscribe("Obstacle_cloudget/yaw_angle", 1000, yaw_callback); 
     ros::Subscriber start_sub = nh.subscribe("MY_ICP/move_base_start", 1000, start_callback); 

@@ -16,6 +16,7 @@
 
 // 全局变量
 ros::Publisher pub;
+ros::Publisher preproessed_pub;
 ros::Subscriber sub;
 ros::Subscriber odom_sub;
 ros::Time last_time;
@@ -162,6 +163,13 @@ for (size_t i = 0; i < cloud->points.size(); ++i) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_sor(new pcl::PointCloud<pcl::PointXYZ>);
     sor.filter(*cloud_filtered_sor);
 
+    sensor_msgs::PointCloud2 prepprocessed_cloud_msg;
+    pcl::toROSMsg(*cloud_filtered_sor, prepprocessed_cloud_msg);
+    prepprocessed_cloud_msg.header.frame_id = "camera_init";
+    prepprocessed_cloud_msg.header.stamp = ros::Time::now();
+    // 发布处理后的点云
+    preproessed_pub.publish(prepprocessed_cloud_msg);
+
     // 创建VoxelGrid滤波器对象
     pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
     voxel_grid.setInputCloud(cloud_filtered_sor);
@@ -191,7 +199,7 @@ int main(int argc, char** argv) {
     odom_sub = nh.subscribe("odom", 1, odomCallback);
     // 创建Publisher来发布处理后的点云
     pub = nh.advertise<sensor_msgs::PointCloud2>("processed_cloud", 1);
-
+    preproessed_pub = nh.advertise<sensor_msgs::PointCloud2>("preprocessed_cloud", 1);
     last_second_time = ros::Time::now(); // 初始化上一次计算频率的时间
 
     ros::spin();

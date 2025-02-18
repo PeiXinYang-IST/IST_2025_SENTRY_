@@ -11,7 +11,10 @@
 #include "std_msgs/Bool.h"
 #include "mpc_tracking/mpc.h"
 #include "math.h"
+#include <std_msgs/Float64.h>
 #include <sentry_serial/navigation.h>
+#include <geometry_msgs/Vector3.h>
+
 ros::Publisher navigation_pub;
 sentry_serial::navigation navigation;
 
@@ -22,17 +25,18 @@ sentry_serial::navigation navigation;
 // }
 double yaw_angle;
 using fast_planner::NonUniformBspline;
-
+double dist;
 ros::Publisher cmd_vel_pub, motion_path_pub, predict_path_pub;
 nav_msgs::Path predict_path, motion_path;
 nav_msgs::Odometry odom;
-
+geometry_msgs::Vector3 grab;
 nav_msgs::Path global_path_;
 bool get_path_=false;
 bool mpc_start=false;
 bool receive_traj = false;
 vector<NonUniformBspline> traj;
 double traj_duration;
+Eigen::Vector2d gradient(grab.x, grab.y);
 ros::Time start_time;
 
 double last_yaw;
@@ -201,7 +205,7 @@ void publish_control_cmd(const ros::TimerEvent &e) {
       cout << "[Traj server]: invalid time." << endl;
   }
 
-    auto result = mpc_ptr->solve(current_state, desired_state);
+    auto result = mpc_ptr->solve(current_state, desired_state,dist,gradient,0.25);
     geometry_msgs::Twist cmd;
     cmd.linear.x = result[0];
     cmd.linear.y = result[1];
@@ -245,6 +249,22 @@ void yaw_callback(const std_msgs::Float32& msg)
 	yaw_angle = msg.data;
 }
 
+void distCallback(std_msgs::Float64 msg)
+{
+  dist = msg.data;
+  // ROS_WARN("DIST: %f",dist);
+}
+
+
+void grabCallback(geometry_msgs::Vector3 msg)
+{
+  grab.x = msg.x;
+  grab.y = msg.y;
+  grab.z = msg.z;
+  gradient.x() = grab.x;
+  gradient.y() = grab.y;
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "mpc_tracking_node");
@@ -252,15 +272,16 @@ int main(int argc, char **argv)
     cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/mpc_cmd_vel", 1);
     predict_path_pub = nh.advertise<nav_msgs::Path>("/predict_path", 1);
     motion_path_pub = nh.advertise<nav_msgs::Path>("/motion_path", 1);
-   
+    navigation_pub = nh.advertise<sentry_serial::navigation>("navigation",10);
+
     ros::Subscriber odom_sub = nh.subscribe("/odom", 1, &odomCallback);
     ros::Subscriber bspline_sub = nh.subscribe("planning/bspline", 10, bsplineCallback);
     ros::Subscriber replan_sub = nh.subscribe("planning/replan", 10, replanCallback);
     ros::Subscriber path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, pathCallback);
     ros::Subscriber fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, start_task);
-    navigation_pub = nh.advertise<sentry_serial::navigation>("navigation",10);
     ros::Subscriber yaw_sub = nh.subscribe("Obstacle_cloudget/yaw_angle", 1000, yaw_callback); 
-
+    ros::Subscriber dist_sub = nh.subscribe("/dist", 10, distCallback);
+    ros::Subscriber grab_sub = nh.subscribe("/grad", 10, grabCallback);
     control_cmd_pub = nh.createTimer(ros::Duration(0.1), publish_control_cmd);
     
 
