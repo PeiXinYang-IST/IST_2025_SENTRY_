@@ -33,6 +33,7 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   odom_sub = nh.subscribe("/odom", 1, &FastPlannerManager::odomCallback,this);
   grad_pub_ = nh.advertise<geometry_msgs::Vector3>("/grad", 100); //这里设置的是esdf地图的梯度向量
   dist_pub_ = nh.advertise<std_msgs::Float64>("/dist", 10);
+  path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &FastPlannerManager::pathCallback, this);
 
   local_data_.traj_id_ = 0;
   sdf_map_.reset(new SDFMap);
@@ -68,6 +69,56 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
     topo_prm_->setEnvironment(edt_environment_);
     topo_prm_->init(nh);
   }
+}    
+
+void douglasPeucker(const std::vector<Eigen::Vector3d>& point_set, int start, int end, double epsilon, std::vector<Eigen::Vector3d>& out) {
+  if (start >= end) {
+    return;
+  }
+
+  double max_dist = 0.0;
+  int index = start;
+
+  Eigen::Vector3d start_point = point_set[start];
+  Eigen::Vector3d end_point = point_set[end];
+
+  for (int i = start + 1; i < end; ++i) {
+    Eigen::Vector3d point = point_set[i];
+    double dist = ((end_point - start_point).cross(start_point - point)).norm() / (end_point - start_point).norm();
+    if (dist > max_dist) {
+      max_dist = dist;
+      index = i;
+    }
+  }
+
+  if (max_dist > epsilon) {
+    std::vector<Eigen::Vector3d> left_out, right_out;
+    douglasPeucker(point_set, start, index, epsilon, left_out);
+    douglasPeucker(point_set, index, end, epsilon, right_out);
+
+    out.insert(out.end(), left_out.begin(), left_out.end());
+    out.push_back(point_set[index]);
+    out.insert(out.end(), right_out.begin(), right_out.end());
+  } else {
+    out.push_back(start_point);
+    out.push_back(end_point);
+  }
+}
+
+void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
+     // Implementation of the callback function
+      for (size_t i = 0; i < msg.poses.size(); i += 15) {
+        const auto& pose = msg.poses[i];
+        Eigen::Vector3d point;
+        point[0] = pose.pose.position.x;
+        point[1] = pose.pose.position.y;
+        point[2] = pose.pose.position.z;   
+      move_base_point_set.push_back(point);
+      // Apply Douglas-Peucker algorithm to extract key points
+      // std::vector<Eigen::Vector3d> key_points;
+      // douglasPeucker(move_base_point_set, 0, move_base_point_set.size() - 1, 0.15, key_points);
+      // move_base_point_set = key_points;
+    }
 }
 
 nav_msgs::Odometry odom;
@@ -194,27 +245,6 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
   double ts = pp_.ctrl_pt_dist / pp_.max_vel_;
   vector<Eigen::Vector3d> point_set, start_end_derivatives;
   kino_path_finder_->getSamples(ts, point_set, start_end_derivatives);
-
-  // point_set[0] = Eigen::Vector3d(0.0, 0.0, 0.0);
-  // point_set[1] = Eigen::Vector3d(0.4, 0.6, 0.0);
-  // point_set[2] = Eigen::Vector3d(0.7, 0.8, 0.0);
-  // point_set[3] = Eigen::Vector3d(1.0, 1.45, 0.0);
-  // point_set[4] = Eigen::Vector3d(1.65, 1.67, 0.0);
-  // point_set[5] = Eigen::Vector3d(1.60, 1.80, 0.0);
-  // point_set[6] = Eigen::Vector3d(2.70, 2.75, 0.0);
-  // point_set[7] = Eigen::Vector3d(3.30, 3.50, 0.0);
-  // point_set[8] = Eigen::Vector3d(3.50, 4.30, 0.0);
-  // point_set[9] = Eigen::Vector3d(2.45, 5.2, 0.0);
-  // point_set[10] = Eigen::Vector3d(0.50, 0.20, 0.0);
-  // point_set[11] = Eigen::Vector3d(0.92, 0.2, 0.0);
-  // point_set[12] = Eigen::Vector3d(1.5, 0.3, 0.0);
-  // point_set[13] = Eigen::Vector3d(1.7, 0.45, 0.0);
-  // point_set[14] = Eigen::Vector3d(2.0, 0.67, 0.0);
-  // point_set[15] = Eigen::Vector3d(1.9, 0.80, 0.0);
-  // point_set[16] = Eigen::Vector3d(2.3, 0.75, 0.0);
-  // point_set[17] = Eigen::Vector3d(2.50, 0.50, 0.0);
-  // point_set[18] = Eigen::Vector3d(2.80, 0.90, 0.0);
-  // point_set[19] = Eigen::Vector3d(3.45, 0.5, 0.0);
 
   Eigen::MatrixXd ctrl_pts;
   NonUniformBspline::parameterizeToBspline(ts, point_set, start_end_derivatives, ctrl_pts);

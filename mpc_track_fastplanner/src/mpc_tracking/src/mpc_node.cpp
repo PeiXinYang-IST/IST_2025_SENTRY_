@@ -30,6 +30,7 @@ ros::Publisher cmd_vel_pub, motion_path_pub, predict_path_pub;
 nav_msgs::Path predict_path, motion_path;
 nav_msgs::Odometry odom;
 geometry_msgs::Vector3 grab;
+Eigen::Vector3f cur_vel;
 nav_msgs::Path global_path_;
 bool get_path_=false;
 bool mpc_start=false;
@@ -55,7 +56,6 @@ unique_ptr<Mpc> mpc_ptr;
 
 void bsplineCallback(mpc_tracking::BsplineConstPtr msg) {
   // parse pos traj
-  ROS_WARN("2222222222");
   Eigen::MatrixXd pos_pts(msg->pos_pts.size(), 3);
 
   Eigen::VectorXd knots(msg->knots.size());
@@ -115,6 +115,8 @@ void odomCallback(const nav_msgs::Odometry &msg) {
   if(get_path_ && mpc_start){
   // ROS_WARN("2222222222");
   odom = msg;
+  cur_vel.x() = msg.twist.twist.linear.x;
+  cur_vel.y() = msg.twist.twist.linear.y;
 //sim
     // current_state(0) = msg.pose.pose.position.x;
     // current_state(1) = msg.pose.pose.position.y;
@@ -209,6 +211,36 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     geometry_msgs::Twist cmd;
     cmd.linear.x = result[0];
     cmd.linear.y = result[1];
+          // 获取当前速度
+    double current_x = cur_vel.x();
+    double current_y = cur_vel.y();
+
+    // 获取目标速度
+    double desired_x = cmd.linear.x;
+    double desired_y = cmd.linear.y;
+
+    // 限制最大阶跃
+    const double max_step = 0.35;
+
+    // 计算速度变化矢量
+    double delta_x = desired_x - current_x;
+    double delta_y = desired_y - current_y;
+
+    // 计算速度变化矢量的模（欧几里得距离）
+    double delta_norm = std::sqrt(delta_x * delta_x + delta_y * delta_y);
+
+    // 如果速度变化矢量的模超过最大阶跃，则进行缩放
+  if (delta_norm > max_step) {
+    double scale_factor = max_step / delta_norm; // 缩放因子
+    delta_x *= scale_factor; // 缩放 x 分量
+    delta_y *= scale_factor; // 缩放 y 分量
+    ROS_WARN("acc too high!!!");
+}
+
+    // 更新目标速度
+    cmd.linear.x = current_x + delta_x;
+    cmd.linear.y = current_y + delta_y;
+
     double dx = current_state(0) - global_path_.poses.back().pose.position.x;
     double dy = current_state(1) - global_path_.poses.back().pose.position.y;
 

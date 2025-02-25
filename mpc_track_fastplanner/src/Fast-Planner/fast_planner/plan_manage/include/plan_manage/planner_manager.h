@@ -13,6 +13,7 @@
 #include <plan_manage/plan_container.hpp>
 #include <std_msgs/Float64.h>
 #include <ros/ros.h>
+#include <nav_msgs/Path.h>
 
 namespace fast_planner {
 
@@ -45,6 +46,9 @@ public:
   EDTEnvironment::Ptr edt_environment_;
   ros::Publisher grad_pub_;
   ros::Subscriber odom_sub;
+  ros::Subscriber path_sub_;
+  vector<Eigen::Vector3d> move_base_point_set;
+
 private:
   /* main planning algorithms & modules */
   SDFMap::Ptr sdf_map_;
@@ -74,6 +78,7 @@ private:
   // heading planning
   void calcNextYaw(const double& last_yaw, double& yaw);
   void odomCallback(const nav_msgs::Odometry &msg);
+  void pathCallback(const nav_msgs::Path &msg);
     // !SECTION stable
 
   // SECTION developing
