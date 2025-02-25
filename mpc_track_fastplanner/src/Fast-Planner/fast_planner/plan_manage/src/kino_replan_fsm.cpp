@@ -253,10 +253,10 @@ void KinoReplanFSM::checkCollisionCallback(const ros::TimerEvent& e) {
         edt_env->evaluateCoarseEDT(end_pt_, /* time to program start + */ info->duration_) :
         edt_env->evaluateCoarseEDT(end_pt_, -1.0);
 
-    if (dist <= 0.3) {
+    if (dist <= 0.1) {
       /* try to find a max distance goal around */
       bool            new_goal = false;
-      const double    dr = 0.5, dtheta = 30, dz = 0.3;
+      const double    dr = 0.3, dtheta = 360, dz = 0;
       double          new_x, new_y, new_z, max_dist = -1.0;
       Eigen::Vector3d goal;
 

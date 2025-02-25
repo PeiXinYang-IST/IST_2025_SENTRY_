@@ -11,9 +11,9 @@
 ros::Publisher mode_pub;
 
 enum NavigationMode {
-    PURSUIT,
-    LOCAL_PATROLLING,
-    GLOBAL_PATROLLING
+    PURSUIT, //0
+    LOCAL_PATROLLING, //1
+    GLOBAL_PATROLLING //2
 };
 
 NavigationMode current_mode;

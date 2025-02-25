@@ -115,7 +115,7 @@ void Obstacle_cloud_get::Init_params()
 {
     nh_.param<float>("kdtree_search_radius",kdtree_search_radius_,0.02);
     nh_.param<float>("filter_search_radius",filter_search_radius_,0.15);
-    nh_.param<float>("save_obstacle_cloud_time",save_obstacle_cloud_time_,0.15);
+    nh_.param<float>("save_obstacle_cloud_time",save_obstacle_cloud_time_,1.5);
     transform = Eigen::Matrix4f::Identity();
     transform.block<3, 3>(0, 0) = Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ()).toRotationMatrix();
 }

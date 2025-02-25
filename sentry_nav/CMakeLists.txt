@@ -161,7 +161,7 @@ include_directories(
 add_executable(trans_tf_2d src/Trans_TF_2d.cpp)
 add_executable(trans_tf_2d_odom src/Trans_TF_2d_odom.cpp)
 add_executable(trans_odom_2d src/Trans_odom_2d.cpp)
-add_executable(pid_follow src/pid_follow.cpp)
+# add_executable(pid_follow src/pid_follow.cpp)
 add_executable(APF_hide_obstacle src/APF_hide_obstacle.cpp)
 add_executable(icp_costmap_clear src/icp_costmap_clear.cpp)
 add_executable(BSP_line src/BSP_line.cpp)
@@ -194,9 +194,9 @@ target_link_libraries(trans_tf_2d_odom
 target_link_libraries(trans_odom_2d
   ${catkin_LIBRARIES}
 )
-target_link_libraries(pid_follow
-  ${catkin_LIBRARIES}
-)
+# target_link_libraries(pid_follow
+#   ${catkin_LIBRARIES}
+# )
 target_link_libraries(icp_costmap_clear
   ${catkin_LIBRARIES}
 )
@@ -211,7 +211,7 @@ ${catkin_LIBRARIES}
 )
 find_package(HDF5 REQUIRED)
 include_directories(${HDF5_INCLUDE_DIRS})
-target_link_libraries(pid_follow ${HDF5_LIBRARIES})
+# target_link_libraries(pid_follow ${HDF5_LIBRARIES})
 
 #############
 ## Install ##

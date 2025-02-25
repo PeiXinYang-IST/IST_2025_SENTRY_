@@ -162,6 +162,7 @@ include_directories(
 add_executable(random_deci src/random_deci.cpp)
 add_executable(pursuit src/pursuit.cpp)
 add_executable(decision src/decision.cpp)
+add_executable(local_patroll src/local_patroll.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -183,6 +184,9 @@ target_link_libraries(pursuit
   ${catkin_LIBRARIES}
 )
 target_link_libraries(decision
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(local_patroll
   ${catkin_LIBRARIES}
 )
 #############
