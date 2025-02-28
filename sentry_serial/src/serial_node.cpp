@@ -96,13 +96,14 @@ void mpc_cmd_vel_callback(const geometry_msgs::Twist& cmd_vel)
 {
 	cmd_vel_x=cmd_vel.linear.x;
 	cmd_vel_y=cmd_vel.linear.y;
-	cmd_vel_z=cmd_vel.angular.z;
+	cmd_vel_z=cmd_vel.linear.z;
 
-	serial_package.linear_x = -cmd_vel_x*0.4;
-    serial_package.linear_y = cmd_vel_y*0.4;
-    serial_package.angular_z = cmd_vel_z*0.5;
+	serial_package.linear_x = cmd_vel_x*0.25;
+    serial_package.linear_y = -cmd_vel_y*0.25;
+    serial_package.angular_z = cmd_vel_z;
 	
-    // ROS_INFO("\nSend date finished!\n");
+    ROS_INFO("serial_package.linear_x:%f",serial_package.linear_x);
+	ROS_INFO("serial_package.linear_y:%f",serial_package.linear_y);
 }
 
 void pid_cmd_vel_callback(const geometry_msgs::Twist& cmd_vel)

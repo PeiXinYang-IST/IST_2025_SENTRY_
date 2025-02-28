@@ -34,8 +34,8 @@ public:
         fg[0] = 0;
 
         //weights
-        const int x_weight = 15;
-        const int y_weight = 15;
+        const int x_weight = 10;
+        const int y_weight = 10;
         const int psi_weight =0;
         const int u_weight = 1;
         const int v_weight = 1;

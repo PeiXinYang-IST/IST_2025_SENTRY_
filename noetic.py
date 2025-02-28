@@ -60,8 +60,9 @@ def tcp_server():
                 client_socket = None
 
 def navigation_callback(data):
-    global yaw, x, y, z, pub, client_socket
+    global yaw,pitch, x, y, z, pub, client_socket
     yaw = data.yaw.data
+    pitch = data.pitch.data
     x = data.x.data
     y = data.y.data
     z = data.z.data

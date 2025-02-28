@@ -75,7 +75,7 @@ class Obstacle_cloud_get
     void gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg);
     void obstacle_cloud_get_pose();
     void visual_centroid(const pcl::PointXYZ point);
-    void calculateYaw();
+    void calculateYawPitch();
     void moving_average_filter(const pcl::PointXYZ& new_centroid);
     void navigationModeCallback(const std_msgs::Bool::ConstPtr& msg);
     private:

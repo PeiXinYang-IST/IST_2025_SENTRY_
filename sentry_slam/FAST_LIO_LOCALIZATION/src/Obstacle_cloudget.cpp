@@ -23,14 +23,14 @@ pursuit_mode_enabled(false)
     yaw_pub_ = nh_.advertise<std_msgs::Float32>("yaw_angle", 1);
     pursuit_position_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pursuit_position", 1);
     pursuit_pub_ = nh_.advertise<geometry_msgs::Point>("pursuit", 1);
-    odom_sub_ = nh_.subscribe("Odometry", 1, &Obstacle_cloud_get::odomCallback, this);
+    odom_sub_ = nh_.subscribe("/odom", 1, &Obstacle_cloud_get::odomCallback, this);
     map_to_odom_sub_ = nh_.subscribe("/MY_ICP/map_to_odom", 1 ,&Obstacle_cloud_get::transformCallback, this);
     world_obstacle_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("world_obstacle_cloud", 1);
     grid_map_sub_ = nh_.subscribe("/prior_map",  1, &Obstacle_cloud_get::gridmapCallback, this);
     marker_pub = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
     kdmeans_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("kdmeans_cloud", 1);
     navigation_mode_sub = nh_.subscribe<std_msgs::Bool>("navigation_mode", 10, &Obstacle_cloud_get::navigationModeCallback, this);
-
+    nearest_centroid = pcl::PointXYZ(0, 0, 0); // 显式初始化
     Init_params();
     icp_transform_ = Eigen::Matrix4f::Identity();
 }
@@ -47,7 +47,7 @@ void Obstacle_cloud_get::navigationModeCallback(const std_msgs::Bool::ConstPtr& 
     }
 }
 
-
+ 
 void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) // 获取地图信息
 {
         // 获取地图信息
@@ -125,6 +125,7 @@ void Obstacle_cloud_get::transformCallback(const geometry_msgs::TransformStamped
 {
     static Eigen::Vector3f last_trans = Eigen::Vector3f::Identity();
     // 从ROS消息中提取旋转和位置
+    
     Eigen::Quaternionf quat(
         input->transform.rotation.w,
         input->transform.rotation.x,
@@ -177,6 +178,7 @@ void Obstacle_cloud_get::odomCallback(const nav_msgs::Odometry::ConstPtr& odom_m
     clear_distance_x = radar_position[0];
     clear_distance_y = radar_position[1];
     clear_distance_z = radar_position[2];
+    // ROS_WARN("CLEAR_DISTANCE_X: %.2f, CLEAR_DISTANCE_Y: %.2f, CLEAR_DISTANCE_Z: %.2f", clear_distance_x, clear_distance_y, clear_distance_z);
 }
 
 /**
@@ -249,7 +251,7 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     // 设置搜索半径
     outrem.setRadiusSearch(filter_search_radius_);
     // 设置最小邻居数
-    outrem.setMinNeighborsInRadius(3);
+    outrem.setMinNeighborsInRadius(10);
     // 执行滤波
     outrem.filter(*real_obstacle_cloud);
     }
@@ -292,7 +294,7 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     world_obstacle_msg.header.stamp = ros::Time::now();
     world_obstacle_pub_.publish(world_obstacle_msg);
 
-    if(!real_obstacle_cloud->empty() && pursuit_mode_enabled)
+    if(!real_obstacle_cloud->empty())
     obstacle_cloud_get_pose();
 }
 
@@ -303,7 +305,7 @@ void Obstacle_cloud_get::obstacle_cloud_get_pose()
         ROS_WARN("No points in real_obstacle_cloud, skipping clustering.");
         return;
     }
-
+    
     // 创建Kd树对象用于点云的搜索
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
     tree->setInputCloud(real_obstacle_cloud);
@@ -311,7 +313,7 @@ void Obstacle_cloud_get::obstacle_cloud_get_pose()
     // 设置聚类算法的参数
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
     ec.setClusterTolerance(0.1); // 10cm
-    ec.setMinClusterSize(8);
+    ec.setMinClusterSize(20);
     ec.setMaxClusterSize(25000);
     ec.setSearchMethod(tree);
     ec.setInputCloud(real_obstacle_cloud);
@@ -320,17 +322,20 @@ void Obstacle_cloud_get::obstacle_cloud_get_pose()
     ec.extract(cluster_indices);
     kdmeans_cloud->clear();
 
+std::vector<pcl::PointXYZ> all_centroids; // 用于存储所有聚类的质心
+
 for (const auto& indices : cluster_indices) {
-    
     if (indices.indices.empty()) {
         ROS_WARN("Empty cluster, skipping centroid calculation.");
         continue;
     }
 
+    // 计算当前聚类的质心
     pcl::PointXYZ centroid;
-    std::vector<pcl::PointXYZ> centroids;
-    pcl::PointXYZ kdmeans_point;
-    centroid.x = centroid.y = centroid.z = 0.0;
+    centroid.x = 0.0;
+    centroid.y = 0.0;
+    centroid.z = 0.5; // 固定高度
+
     for (const auto& idx : indices.indices) {
         centroid.x += (*real_obstacle_cloud)[idx].x;
         centroid.y += (*real_obstacle_cloud)[idx].y;
@@ -338,27 +343,46 @@ for (const auto& indices : cluster_indices) {
 
     centroid.x /= indices.indices.size();
     centroid.y /= indices.indices.size();
-    centroid.z = 0.5;
-    centroids.push_back(centroid);
+    
+    all_centroids.push_back(centroid); // 将质心加入全局列表
+}
 
-    double min_distance = std::numeric_limits<double>::max();
-        for (const auto& centroid : centroids) {
-            double distance = std::sqrt((centroid.x - clear_distance_x) * (centroid.x - clear_distance_x) +
-                                        (centroid.y - clear_distance_y) * (centroid.y - clear_distance_x));
-            if (distance < min_distance) {
-                min_distance = distance;
-                nearest_centroid = centroid;
-            }
-        }
+if (all_centroids.empty()) {
+    // ROS_WARN("No valid centroids found. Skipping pursuit position update.");
+    return; // 无质心时提前退出
+}
+
+// 寻找距离雷达最近的质心
+double min_distance = std::numeric_limits<double>::max();
+pcl::PointXYZ nearest_centroid(0, 0, 0); // 显式初始化
+
+for (const auto& centroid : all_centroids) {
+    double distance = std::sqrt(
+        std::pow(centroid.x - clear_distance_x, 2) +
+        std::pow(centroid.y - clear_distance_y, 2)
+    );
+
+    if (distance < min_distance) {
+        min_distance = distance;
+        nearest_centroid = centroid;
+    }
+}
+
+// 确保找到有效质心
+if (min_distance == std::numeric_limits<double>::max()) {
+    ROS_WARN("Failed to find nearest centroid.");
+    return;
+}
 
     pcl::PointXYZ odom_point;
     odom_point.x=clear_distance_x;
     odom_point.y=clear_distance_z;
     moving_average_filter(nearest_centroid);
-    // calculateYaw();
-    visual_centroid(nearest_centroid);
+    if(filtered_centroid_.x !=0 && filtered_centroid_.y !=0)
+    calculateYawPitch();
+    visual_centroid(filtered_centroid_);
 }
-}
+
 
 void Obstacle_cloud_get::moving_average_filter(const pcl::PointXYZ& new_centroid) {
         centroid_history_.push_back(new_centroid);
@@ -383,27 +407,31 @@ void Obstacle_cloud_get::moving_average_filter(const pcl::PointXYZ& new_centroid
     pursuit_position.header.stamp = ros::Time::now();
     pursuit_position.header.frame_id = "odom";
     pursuit_position_pub_.publish(pursuit_position);
-    ROS_INFO("pursuit_position_x: %f",pursuit_position.pose.position.x);
-    ROS_INFO("pursuit_position_y: %f",pursuit_position.pose.position.y);
 }
 
-void Obstacle_cloud_get::calculateYaw()
-{
-    static float distance_x,distance_y,last_yaw;
-    float alpha = 0.2;
-    distance_x = filtered_centroid_.x - clear_distance_x;
-    distance_y = filtered_centroid_.y - clear_distance_y;
-    yaw_angle = atan2(distance_y, distance_x);
-    yaw_angle = alpha * last_yaw + (1-alpha)*yaw_angle;
-    last_yaw = yaw_angle;
-
-    double yaw_angle_degrees = yaw_angle * (180.0 / M_PI);  // 转换为度数
-    if (yaw_angle_degrees > 180.0) {
-        yaw_angle_degrees -= 360.0;
+void Obstacle_cloud_get::calculateYawPitch() {
+    float distance_x = filtered_centroid_.x - clear_distance_x;
+    float distance_y = filtered_centroid_.y - clear_distance_y;
+    // 检查距离是否过近
+    const float distance_sq = distance_x * distance_x + distance_y * distance_y;
+    if (distance_sq < 1e-6f) { // 1mm的平方阈值
+        ROS_WARN("Target too close, skipping yaw calculation.");
+        return;
     }
-    yaw_msg.data = yaw_angle;
+    // 计算当前角度
+    float current_yaw = atan2(distance_y, distance_x);
+
+    // 转换到度数并调整到[-180, 180]
+    float yaw_deg = current_yaw * (180.0f / M_PI);
+    if (yaw_deg > 180.0f) {
+        yaw_deg -= 360.0f;
+    } else if (yaw_deg < -180.0f) {
+        yaw_deg += 360.0f;
+    }
+
+    yaw_msg.data = yaw_deg;
     yaw_pub_.publish(yaw_msg);
-    ROS_WARN("yaw_angle: %f",yaw_angle_degrees);
+    // ROS_WARN("yaw_angle: %.2f degrees", yaw_deg);
 }
 
 void Obstacle_cloud_get::visual_centroid(const pcl::PointXYZ point)

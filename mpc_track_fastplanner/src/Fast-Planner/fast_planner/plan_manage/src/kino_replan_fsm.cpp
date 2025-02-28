@@ -34,8 +34,7 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
   exec_timer_   = nh.createTimer(ros::Duration(0.01), &KinoReplanFSM::execFSMCallback, this);
   safety_timer_ = nh.createTimer(ros::Duration(0.05), &KinoReplanFSM::checkCollisionCallback, this);
 
-  waypoint_sub_ =
-      nh.subscribe("/waypoint_generator/waypoints", 1, &KinoReplanFSM::waypointCallback, this);
+  waypoint_sub_ =  nh.subscribe("/waypoint_generator/waypoints", 1, &KinoReplanFSM::waypointCallback, this);
   odom_sub_ = nh.subscribe("/odom_world", 1, &KinoReplanFSM::odometryCallback, this);
   map_to_odom_sub_ = nh.subscribe("/MY_ICP/map_to_odom", 1, &KinoReplanFSM::map_to_odomcallback, this);
   replan_pub_  = nh.advertise<std_msgs::Empty>("/planning/replan", 10);
@@ -94,7 +93,7 @@ if(get_path_){
   geometry_msgs::PoseStamped robot_pose_;
   global_path_.header.frame_id = "odom";
   global_path_.header.stamp = ros::Time::now();
-  odom_pos_(0) = global_path_.poses[0].pose.position.x-0.09;
+  odom_pos_(0) = global_path_.poses[0].pose.position.x+0.11;
   odom_pos_(1) = global_path_.poses[0].pose.position.y;
   odom_pos_(2) = global_path_.poses[0].pose.position.z;
 
@@ -170,9 +169,10 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
       start_acc_.setZero();
 
       Eigen::Vector3d rot_x = odom_orient_.toRotationMatrix().block(0, 0, 3, 1);
-      start_yaw_(0)         = atan2(rot_x(1), rot_x(0));
-      start_yaw_(1) = start_yaw_(2) = 0.0;
-
+      // start_yaw_(0)         = atan2(rot_x(1), rot_x(0));
+      // start_yaw_(1) = start_yaw_(2) = 0.0;
+      start_yaw_(0) = 0.0;
+      start_yaw_(1) = 0.0;
       bool success = callKinodynamicReplan();
       if (success) {
         changeFSMExecState(EXEC_TRAJ, "FSM");
@@ -225,10 +225,14 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
       start_vel_ = info->velocity_traj_.evaluateDeBoorT(t_cur);
       start_acc_ = info->acceleration_traj_.evaluateDeBoorT(t_cur);
 
-      start_yaw_(0) = info->yaw_traj_.evaluateDeBoorT(t_cur)[0];
-      start_yaw_(1) = info->yawdot_traj_.evaluateDeBoorT(t_cur)[0];
-      start_yaw_(2) = info->yawdotdot_traj_.evaluateDeBoorT(t_cur)[0];
+      // start_yaw_(0) = info->yaw_traj_.evaluateDeBoorT(t_cur)[0];
+      // start_yaw_(1) = info->yawdot_traj_.evaluateDeBoorT(t_cur)[0];
+      // start_yaw_(2) = info->yawdotdot_traj_.evaluateDeBoorT(t_cur)[0];
 
+      start_yaw_(0) = 0;
+      start_yaw_(1) = 0;
+      start_yaw_(2) = 0;
+      
       std_msgs::Empty replan_msg;
       replan_pub_.publish(replan_msg);
 

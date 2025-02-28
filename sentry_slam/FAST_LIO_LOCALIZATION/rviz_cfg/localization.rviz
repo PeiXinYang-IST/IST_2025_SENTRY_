@@ -497,7 +497,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.4749999940395355
+        Max Value: 0.675000011920929
         Min Value: 0.02500000037252903
         Value: true
       Axis: Z
@@ -527,7 +527,7 @@ Visualization Manager:
       Marker Topic: /planning_vis/trajectory
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -535,7 +535,7 @@ Visualization Manager:
       Marker Topic: /planning/position_cmd_vis
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -607,7 +607,7 @@ Visualization Manager:
       Marker Topic: /planning/travel_traj
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -748,6 +748,14 @@ Visualization Manager:
       Topic: /pid_follow/pid_local_path
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /Obstacle_cloudget/visualization_marker
+      Name: Marker
+      Namespaces:
+        centroid: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -792,9 +800,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4097963571548462
+      Pitch: 1.3247963190078735
       Target Frame: <Fixed Frame>
-      Yaw: 1.3611146211624146
+      Yaw: 0.42611441016197205
     Saved: ~
 Window Geometry:
   Displays:

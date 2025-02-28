@@ -66,7 +66,7 @@ def listener_node():
     rospy.init_node('tf_listener_node', anonymous=True)
     rospy.Subscriber("MY_ICP/map_to_odom", TransformStamped, transform_callback)
     # # 设置定时器，每0.1秒调用一次publish_transform函数
-    # rospy.Timer(rospy.Duration(0.1), publish_transform, oneshot=False)
+    rospy.Timer(rospy.Duration(0.1), publish_transform, oneshot=False)
 
     rospy.spin()
 

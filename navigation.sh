@@ -50,9 +50,9 @@ restart_nodes() {
     echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
     # 启动Serial节点
-    #roslaunch sentry_serial serial.launch &
-    #PID_SERIAL=$!
-    #echo "Serial relaunched with PID: $PID_SERIAL"
+    # roslaunch sentry_serial serial.launch &
+    # PID_SERIAL=$!
+    # echo "Serial relaunched with PID: $PID_SERIAL"
 }
 
 # 杀死进程的函数

@@ -113,7 +113,6 @@ void start_task(const std_msgs::Bool::ConstPtr& msg){
 
 void odomCallback(const nav_msgs::Odometry &msg) {
   if(get_path_ && mpc_start){
-  // ROS_WARN("2222222222");
   odom = msg;
   cur_vel.x() = msg.twist.twist.linear.x;
   cur_vel.y() = msg.twist.twist.linear.y;
@@ -124,9 +123,10 @@ void odomCallback(const nav_msgs::Odometry &msg) {
 //real
     global_path_.header.frame_id = "odom";
     global_path_.header.stamp = ros::Time::now();
-    current_state(0) = global_path_.poses[0].pose.position.x-0.09;
+    current_state(0) = global_path_.poses[0].pose.position.x+0.11;
     current_state(1) = global_path_.poses[0].pose.position.y;
     current_state(2) = 0.0;
+
     // current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
     //double yaw1 = tf2::getYaw(msg.pose.pose.orientation);
     // Eigen::Quaterniond quaternion;
@@ -211,6 +211,7 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     geometry_msgs::Twist cmd;
     cmd.linear.x = result[0];
     cmd.linear.y = result[1];
+    cmd.linear.z = result[2];
           // 获取当前速度
     double current_x = cur_vel.x();
     double current_y = cur_vel.y();
@@ -220,7 +221,7 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     double desired_y = cmd.linear.y;
 
     // 限制最大阶跃
-    const double max_step = 0.35;
+    const double max_step = 1.5;
 
     // 计算速度变化矢量
     double delta_x = desired_x - current_x;
@@ -244,11 +245,17 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     double dx = current_state(0) - global_path_.poses.back().pose.position.x;
     double dy = current_state(1) - global_path_.poses.back().pose.position.y;
 
-    // if(std::sqrt(dx * dx + dy * dy) < 0.5)
-    // cmd.angular.z = 1.5;
+    if(std::sqrt(dx * dx + dy * dy) < 0.7)
+    cmd.angular.z = 1.0;
 
-    // if(std::sqrt(dx * dx + dy * dy) < 1.2)
-    // cmd.angular.z = 1.0;   
+    else
+    cmd.angular.z = 0.15;
+
+    if(std::sqrt(dx * dx + dy * dy) < 0.5)
+    {
+    cmd.angular.x = 0.3 * cmd.linear.x;   
+    cmd.angular.y = 0.3 * cmd.linear.y;   
+    }
     cmd.angular.z =0.0;   
 
     // cmd.linear.x = (cmd.linear.x * cos(current_state(2)) + cmd.linear.y * sin(current_state(2)));
