@@ -3,8 +3,9 @@ import socket
 import rospy
 from std_msgs.msg import String
 
-# 定义全局变量
+# 全局变量
 yaw = 0.0
+pitch = 0.0
 x = 0.0
 y = 0.0
 z = 0.0
@@ -14,60 +15,46 @@ client_socket = None
 def tcp_server():
     global pub, client_socket
     host = '127.0.0.1'
-    port = 51010
-    max_port = 65535
-    server_socket = None
+    port = 51015  # 固定端口
 
-    # 自动寻找可用端口
-    while port <= max_port:
-        try:
-            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_socket.bind((host, port))
-            break
-        except OSError as e:
-            if e.errno == 98:
-                print(f"Port {port} is occupied, trying {port + 1}")
-                port += 1
-                if server_socket:
-                    server_socket.close()
-            else:
-                raise
-    else:
-        raise OSError(f"No available ports between {port} and {max_port}")
-
-    print(f"Successfully bound to port {port}")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        server_socket.bind((host, port))
+    except OSError as e:
+        rospy.logerr(f"Port {port} is occupied: {e}")
+        raise
     server_socket.listen(5)
+    rospy.loginfo(f"TCP Server started on {host}:{port}")
 
     rospy.init_node('noetic_tcp_server', anonymous=True)
     pub = rospy.Publisher('chatter', String, queue_size=10)
-    rate = rospy.Rate(50)
-
     navigation_sub = rospy.Subscriber('navigation', navigation, navigation_callback)
 
     while not rospy.is_shutdown():
         client_socket, addr = server_socket.accept()
-        print(f"Connection from: {addr}")
-        
+        rospy.loginfo(f"Connected by {addr}")
         try:
-            while True:
+            rate = rospy.Rate(50)
+            while not rospy.is_shutdown():
                 rate.sleep()
         except rospy.ROSInterruptException:
             pass
         finally:
-            if client_socket:
-                client_socket.close()
-                client_socket = None
+            client_socket.close()
+            client_socket = None
 
 def navigation_callback(data):
-    global yaw,pitch, x, y, z, pub, client_socket
-    yaw = data.yaw.data
+    global yaw, pitch, x, y, z, client_socket
+    # 假设yaw/pitch/x/y/z是std_msgs/Float64类型
+    yaw = data.yaw.data    # 关键修改：提取实际数值
     pitch = data.pitch.data
     x = data.x.data
     y = data.y.data
     z = data.z.data
 
-    message = f"yaw: {yaw}, x: {x}, y: {y}, z: {z}, time: {rospy.get_time()}"
+    # 修改后的消息格式（去掉data层级）
+    message = f"yaw: {yaw}, pitch: {pitch}, x: {x}, y: {y}, z: {z}, time: {rospy.get_time()}"
     rospy.loginfo(message)
     pub.publish(message)
 
@@ -84,5 +71,3 @@ if __name__ == '__main__':
         tcp_server()
     except rospy.ROSInterruptException:
         pass
-    except OSError as e:
-        print(f"Critical error: {e}")

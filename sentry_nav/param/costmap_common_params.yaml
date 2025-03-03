@@ -11,7 +11,7 @@ obstacle_layer:
 inflation_layer:
   enabled:              true
   cost_scaling_factor:  5.0  # exponential rate at which the obstacle cost drops off (default: 10)
-  inflation_radius:    0.2  # max. distance from an obstacle at which costs are incurred for planning paths.
+  inflation_radius:    0.15  # max. distance from an obstacle at which costs are incurred for planning paths.
  
 #  observation_sources: pointcloud2_sensor
 #  pointcloud2_sensor: {data_type: PointCloud2, topic: /cloud_registered, marking: true, clearing: true}
@@ -28,4 +28,4 @@ map_type: costmap
 observation_sources: scan
 #对传感器的坐标系和数据进行配置。这个也会用于代价地图添加和清除障碍物。例如，你可以用激光雷达传感器用于在代价地图添加障碍物，再添加kinect用于导航和清除障碍物。
 #sensor_frame should be your own frame in tftree
-scan: {sensor_frame: body_foot, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+scan: {sensor_frame: laser_scan, data_type: LaserScan, topic: /scan, marking: true, clearing: true}

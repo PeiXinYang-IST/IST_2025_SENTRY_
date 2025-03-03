@@ -62,7 +62,7 @@ void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr
         // 清空点云数据
         world_Obstacle_cloud_->points.clear();
         world_Obstacle_cloud_->width = 0;
-        world_Obstacle_cloud_->height = 9;  
+        world_Obstacle_cloud_->height = 6;  
 
         // 遍历地图数据，找到值为100的点（障碍物）
         for (int y = 0; y < height; ++y) {
@@ -86,12 +86,12 @@ void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr
                     point.z = 0.4;  
                     world_Obstacle_cloud_->points.push_back(point);      
                     point.z = 0.5;  
-                    world_Obstacle_cloud_->points.push_back(point);                  
-                    point.z = 0.6;  
-                    world_Obstacle_cloud_->points.push_back(point);
-                    point.z = 0.7;  
-                    world_Obstacle_cloud_->points.push_back(point);      
-                    point.z = -0.1;  
+                    // world_Obstacle_cloud_->points.push_back(point);                  
+                    // point.z = 0.6;  
+                    // world_Obstacle_cloud_->points.push_back(point);
+                    // point.z = 0.7;  
+                    // world_Obstacle_cloud_->points.push_back(point);      
+                    // point.z = -0.1;  
                     world_Obstacle_cloud_->points.push_back(point); 
 
                     world_Obstacle_cloud_->width += 1;
@@ -423,6 +423,7 @@ void Obstacle_cloud_get::calculateYawPitch() {
 
     // 转换到度数并调整到[-180, 180]
     float yaw_deg = current_yaw * (180.0f / M_PI);
+    yaw_deg += 75;
     if (yaw_deg > 180.0f) {
         yaw_deg -= 360.0f;
     } else if (yaw_deg < -180.0f) {
@@ -431,7 +432,7 @@ void Obstacle_cloud_get::calculateYawPitch() {
 
     yaw_msg.data = yaw_deg;
     yaw_pub_.publish(yaw_msg);
-    // ROS_WARN("yaw_angle: %.2f degrees", yaw_deg);
+    ROS_WARN("yaw_angle: %.2f degrees", yaw_deg);
 }
 
 void Obstacle_cloud_get::visual_centroid(const pcl::PointXYZ point)

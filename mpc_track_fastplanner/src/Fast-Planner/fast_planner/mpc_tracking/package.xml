@@ -55,7 +55,10 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>bspline</build_depend>
-
+  <build_depend>plan_env</build_depend>
+  <build_depend>path_searching</build_depend>
+  <build_depend>bspline_opt</build_depend>
+  <build_depend>traj_utils</build_depend>
   <build_depend>message_generation</build_depend>
 
   <build_export_depend>geometry_msgs</build_export_depend>
@@ -63,15 +66,18 @@
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>tf2</build_export_depend>
-  <build_export_depend>bspline</build_export_depend>
+  <build_export_depend>message_generation</build_export_depend>
 
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>tf2</exec_depend>
+  <exec_depend>plan_env</exec_depend>
+  <exec_depend>path_searching</exec_depend>
   <exec_depend>bspline</exec_depend>
-
+  <exec_depend>bspline_opt</exec_depend>
+  <exec_depend>traj_utils</exec_depend>
   <exec_depend>message_runtime</exec_depend>
 
 

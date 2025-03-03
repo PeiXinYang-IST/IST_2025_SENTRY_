@@ -30,7 +30,7 @@ public:
         }
     }
 
-    // 获取目标点：在 3 米范围内选最远的点
+    // 获取目标点：在 2 米范围内选最远的点
     void get_goal_pose() {
         static geometry_msgs::PoseStamped current_goal_pose;
         if (global_path_.poses.empty()) return;
@@ -38,10 +38,10 @@ public:
         start_pose = global_path_.poses[0];  // 设定起始点为路径的第一个点
         double max_distance = 0.0;  // 最大距离初始化
 
-        // 遍历路径点，寻找 3 米内最远的点
+        // 遍历路径点，寻找 2 米内最远的点
         for (int i = 1; i < global_path_.poses.size(); ++i) {
             double dist = euclideanDistance(start_pose, global_path_.poses[i]);
-            if (dist <= 3.0 && dist > max_distance) {  // 只考虑 3 米内的点
+            if (dist <= 2.0 && dist > max_distance) {  // 只考虑 2 米内的点
                 max_distance = dist;
                 goal_pose = global_path_.poses[i];  // 更新最远点
             }

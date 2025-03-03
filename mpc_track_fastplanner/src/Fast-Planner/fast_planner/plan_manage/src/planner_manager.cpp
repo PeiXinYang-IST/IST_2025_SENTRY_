@@ -107,7 +107,8 @@ void douglasPeucker(const std::vector<Eigen::Vector3d>& point_set, int start, in
 
 void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
      // Implementation of the callback function
-      for (size_t i = 0; i < msg.poses.size(); i += 15) {
+     move_base_point_set.clear();
+      for (size_t i = 0; i < msg.poses.size(); i += 10) {
         const auto& pose = msg.poses[i];
         Eigen::Vector3d point;
         point[0] = pose.pose.position.x;
@@ -247,7 +248,7 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
   kino_path_finder_->getSamples(ts, point_set, start_end_derivatives);
 
   Eigen::MatrixXd ctrl_pts;
-  NonUniformBspline::parameterizeToBspline(ts, point_set, start_end_derivatives, ctrl_pts);
+  NonUniformBspline::parameterizeToBspline(ts, move_base_point_set, start_end_derivatives, ctrl_pts);
   NonUniformBspline init(ctrl_pts, 3, ts);
 
   // bspline trajectory optimization

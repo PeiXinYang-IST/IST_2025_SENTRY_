@@ -58,8 +58,8 @@
     <param name="sdf_map/local_update_range_x"  value="5.0" /> 
     <param name="sdf_map/local_update_range_y"  value="5.0" /> 
     <param name="sdf_map/local_update_range_z"  value="0.5" /> 
-    <param name="sdf_map/obstacles_inflation"     value="0.01" /> 
-    <param name="sdf_map/local_bound_inflate"    value="0.2"/>
+    <param name="sdf_map/obstacles_inflation"     value="0.3" /> 
+    <param name="sdf_map/local_bound_inflate"    value="0.0"/>
     <param name="sdf_map/local_map_margin" value="50"/>
     <param name="sdf_map/ground_height"        value="0.0"/>
     <!-- camera parameter -->
@@ -95,7 +95,7 @@
   <!-- planner manager -->
     <param name="manager/max_vel" value="$(arg max_vel)" type="double"/>
     <param name="manager/max_acc" value="$(arg max_acc)" type="double"/>
-    <param name="manager/max_jerk" value="4" type="double"/>
+    <param name="manager/max_jerk" value="0.2" type="double"/>
     <param name="manager/dynamic_environment" value="1" type="int"/>
     <param name="manager/local_segment_length" value="5.0" type="double"/>
     <param name="manager/clearance_threshold" value="0.3" type="double"/>
@@ -107,9 +107,9 @@
     <param name="manager/use_optimization" value="true" type="bool"/>
 
   <!-- topology path finding -->
-    <param name="topo_prm/sample_inflate_x" value="3.0" type="double"/>
-    <param name="topo_prm/sample_inflate_y" value="3.0" type="double"/>
-    <param name="topo_prm/sample_inflate_z" value="1.0" type="double"/>
+    <param name="topo_prm/sample_inflate_x" value="10.0" type="double"/>
+    <param name="topo_prm/sample_inflate_y" value="10.0" type="double"/>
+    <param name="topo_prm/sample_inflate_z" value="0.5" type="double"/>
     <param name="topo_prm/clearance" value="0.3" type="double"/>
     <param name="topo_prm/max_sample_time" value="0.01" type="double"/>
     <param name="topo_prm/max_sample_num" value="5000000" type="int"/>
@@ -121,9 +121,9 @@
     <param name="topo_prm/parallel_shortcut" value="true" type="bool"/>
 
   <!-- trajectory optimization -->
-    <param name="optimization/lambda1" value="10.0" type="double"/>
-    <param name="optimization/lambda2" value="5.0" type="double"/>
-    <param name="optimization/lambda3" value="0.0000" type="double"/>
+    <param name="optimization/lambda1" value="5.0" type="double"/>
+    <param name="optimization/lambda2" value="1.0" type="double"/>
+    <param name="optimization/lambda3" value="0.001" type="double"/>
     <param name="optimization/lambda4" value="0.001" type="double"/>
     <param name="optimization/lambda5" value="1.5" type="double"/>
     <param name="optimization/lambda6" value="10.0" type="double"/>

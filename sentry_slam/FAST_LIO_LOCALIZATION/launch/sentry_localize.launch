@@ -65,7 +65,9 @@
 	<!-- 发布一个雷达初始位置camera_init到机器人足端初始位置body_init的静态映射 -->
 	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_2" args="0 0 0 0 0 0 body_foot odom" />
 	<!-- 2d平面重合的点云 -->
-	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_3" args="0.11 0 0 0 0 0 body laser_scan" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_3" args="0.0 0 0.5 0 0 0 body laser_scan" />
+	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_4" args="0 0 0 0 3.141 0 odom odom_double" /> -->
+	
 	<!-- 发布一个雷达初始位置camera_init到map的静态映射 -->
 	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_5" args="0 0 0 0 0 0 odom map" /> -->
 	<!-- 发布一个map到机器人足端初始位置body_init的静态映射 -->

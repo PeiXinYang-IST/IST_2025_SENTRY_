@@ -72,7 +72,7 @@ Visualization Manager:
       Length: 0.699999988079071
       Name: Axes
       Radius: 0.05999999865889549
-      Reference Frame: laser_scan
+      Reference Frame: body_foot
       Show Trail: false
       Value: true
     - Class: rviz/Group
@@ -527,7 +527,7 @@ Visualization Manager:
       Marker Topic: /planning_vis/trajectory
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -535,7 +535,7 @@ Visualization Manager:
       Marker Topic: /planning/position_cmd_vis
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -607,7 +607,7 @@ Visualization Manager:
       Marker Topic: /planning/travel_traj
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -784,7 +784,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.447361946105957
+      Distance: 10.412923812866211
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -792,17 +792,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.04930948093533516
-        Y: 0.25537264347076416
-        Z: -1.1633329391479492
+        X: 0.2895193099975586
+        Y: 0.33816757798194885
+        Z: -1.1636765003204346
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3247963190078735
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
-      Yaw: 0.42611441016197205
+      Yaw: 6.029300689697266
     Saved: ~
 Window Geometry:
   Displays:

@@ -39,7 +39,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES mpc_test
-  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp std_msgs tf2 message_runtime
+  CATKIN_DEPENDS plan_env geometry_msgs nav_msgs roscpp std_msgs tf2 message_runtime
 #  DEPENDS system_lib
 )
 

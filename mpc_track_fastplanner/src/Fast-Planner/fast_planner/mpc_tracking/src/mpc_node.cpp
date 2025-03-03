@@ -23,6 +23,7 @@ sentry_serial::navigation navigation;
 // namespace backward{
 //     backward::SignalHandling sh;
 // }
+
 double yaw_angle;
 using fast_planner::NonUniformBspline;
 double dist;
@@ -167,7 +168,6 @@ void publish_control_cmd(const ros::TimerEvent &e) {
         desired_state(i, 1) = pos[1];
         desired_state(i, 2) = yaw;
       }
-
     } else if (t_cur + (N-1) * dt > traj_duration && t_cur < traj_duration) {
         int more_num = (t_cur + (N-1) * dt - traj_duration) / dt;
         for (int i = 0; i < N - more_num; ++i) {
@@ -246,17 +246,16 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     double dy = current_state(1) - global_path_.poses.back().pose.position.y;
 
     if(std::sqrt(dx * dx + dy * dy) < 0.7)
-    cmd.angular.z = 1.0;
+    cmd.linear.z = 1.0;
 
     else
-    cmd.angular.z = 0.15;
+    cmd.linear.z = 0.15;
 
     if(std::sqrt(dx * dx + dy * dy) < 0.5)
     {
     cmd.angular.x = 0.3 * cmd.linear.x;   
     cmd.angular.y = 0.3 * cmd.linear.y;   
     }
-    cmd.angular.z =0.0;   
 
     // cmd.linear.x = (cmd.linear.x * cos(current_state(2)) + cmd.linear.y * sin(current_state(2)));
     // cmd.linear.y = (- cmd.linear.x * sin(current_state(2)) + cmd.linear.y * cos(current_state(2)));
@@ -267,7 +266,7 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     navigation.yaw.data=yaw_angle;
 	  navigation.x.data=cmd.linear.x;
 	  navigation.y.data=cmd.linear.y;
-	  navigation.z.data=cmd.angular.z;
+	  navigation.z.data=cmd.linear.z;
 	  navigation_pub.publish(navigation);
 
     predict_path.header.frame_id = "odom";
@@ -285,7 +284,12 @@ void publish_control_cmd(const ros::TimerEvent &e) {
 
 void yaw_callback(const std_msgs::Float32& msg)
 {
-	yaw_angle = msg.data;
+  static double last_yaw;
+  double alpha = 0.8;
+
+	yaw_angle = alpha*msg.data + (1-alpha)*last_yaw;
+  last_yaw = yaw_angle;
+
 }
 
 void distCallback(std_msgs::Float64 msg)

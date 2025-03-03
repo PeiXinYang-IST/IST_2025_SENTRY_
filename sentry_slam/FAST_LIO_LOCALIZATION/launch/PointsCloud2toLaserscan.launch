@@ -1,7 +1,7 @@
 <launch>
         <!-- run pointcloud_to_laserscan node -->
     <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
-        <remap from="cloud_in" to="/Obstacle_cloudget/obstacle_cloud"/>   <!-- Obstacle_cloudget/obstacle_cloud"--> 
+        <remap from="cloud_in" to="/Obstacle_cloudget/obstacle_cloud_"/>   <!-- Obstacle_cloudget/obstacle_cloud"--> 
         
         <rosparam>
             transform_tolerance: 0.01

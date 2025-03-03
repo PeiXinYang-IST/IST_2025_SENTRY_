@@ -54,32 +54,32 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     // // 将四元数转换为欧拉角 (roll, pitch, yaw)
     // tf2::Matrix3x3(quat).getRPY(roll, pitch, yaw);
 
-    if (!start) {
-        yaw = 1;
-    }
+    // if (!start) {
+    //     yaw = 1;
+    // }
 	
-	// ROS_WARN("YAW:%f",yaw);
-		float vel[]={(float)serial_package.linear_x,
-				(float)serial_package.linear_y,
-				(float)serial_package.angular_z,
-				(float)yaw};
+	// // ROS_WARN("YAW:%f",yaw);
+	// 	float vel[]={(float)serial_package.linear_x,
+	// 			(float)serial_package.linear_y,
+	// 			(float)serial_package.angular_z,
+	// 			(float)yaw};
 
-	test_data[0] = {'I'};
-	test_data[1] = {'S'};	
-	test_data[2] = {'T'};
+	// test_data[0] = {'I'};
+	// test_data[1] = {'S'};	
+	// test_data[2] = {'T'};
 	
-	memcpy(test_data + 3 ,&vel ,sizeof(vel));
+	// memcpy(test_data + 3 ,&vel ,sizeof(vel));
 	
-	test_data[19] = {'A'};  //结束
-	test_data[20] = {'A'};  //结束
-	test_data[21] = {'A'};  //结束
+	// test_data[19] = {'A'};  //结束
+	// test_data[20] = {'A'};  //结束
+	// test_data[21] = {'A'};  //结束
 
-	// for(uint8_t i = 0;i < 18 ; i++)
-	// 	ROS_INFO("data[%d] = %x" ,i , test_data[i]);
+	// // for(uint8_t i = 0;i < 18 ; i++)
+	// // 	ROS_INFO("data[%d] = %x" ,i , test_data[i]);
 
-    ser.flush ();
-    //ser.write(serial_package.Send_Buffer,data_len);
-	ser.write(test_data,22);
+    // ser.flush ();
+    // //ser.write(serial_package.Send_Buffer,data_len);
+	// ser.write(test_data,22);
 	navigation.yaw.data=yaw;
 	navigation.x.data=serial_package.linear_x;
 	navigation.y.data=serial_package.linear_y;
@@ -133,42 +133,42 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;  
 	nh.getParam("cmd_vel_topic",cmd_vel_topic);
 
-	try
-	{
-		ser.setPort("/dev/ttyACM0");
-		//设置要打开串口名称
-		ser.setBaudrate(115200);
-		//设置波特率
-		serial::bytesize_t bytesize = serial::eightbits;
-		ser.setBytesize(bytesize);
-		//设置数据位
-		serial::parity_t parity = serial::parity_none;
-		ser.setParity(parity);
-		//设置奇偶检验
-		serial::stopbits_t stopbits = serial::stopbits_one;
-		ser.setStopbits(stopbits) ;
-		//设置停止位
-		serial::Timeout to = serial::Timeout::simpleTimeout(100);
-		ser.setTimeout(to);
-		//设置接收字节间隔的超时时间
-		ser.open();	
-		//打开串口
-	}
-	catch(serial::IOException &e)
-	{
-		ROS_ERROR_STREAM("Error to open serial");//串口设备的权限不够
-	}
-	std::cout<<"33333"<<std::endl;
-	if(ser.isOpen())
-	{
-		ser.flushInput();
-		//清空输入的缓存区
-		ROS_INFO_STREAM("Sucees to open serial");	
-	}
-	else
-	{
-		return -1;
-	}
+	// try
+	// {
+	// 	ser.setPort("/dev/ttyACM0");s
+	// 	//设置要打开串口名称
+	// 	ser.setBaudrate(115200);
+	// 	//设置波特率
+	// 	serial::bytesize_t bytesize = serial::eightbits;
+	// 	ser.setBytesize(bytesize);
+	// 	//设置数据位
+	// 	serial::parity_t parity = serial::parity_none;
+	// 	ser.setParity(parity);
+	// 	//设置奇偶检验
+	// 	serial::stopbits_t stopbits = serial::stopbits_one;
+	// 	ser.setStopbits(stopbits) ;
+	// 	//设置停止位
+	// 	serial::Timeout to = serial::Timeout::simpleTimeout(100);
+	// 	ser.setTimeout(to);
+	// 	//设置接收字节间隔的超时时间
+	// 	ser.open();	
+	// 	//打开串口
+	// }
+	// catch(serial::IOException &e)
+	// {
+	// 	ROS_ERROR_STREAM("Error to open serial");//串口设备的权限不够
+	// }
+	// std::cout<<"33333"<<std::endl;
+	// if(ser.isOpen())
+	// {
+	// 	ser.flushInput();
+	// 	//清空输入的缓存区
+	// 	ROS_INFO_STREAM("Sucees to open serial");	
+	// }
+	// else
+	// {
+	// 	return -1;
+	// }
     ROS_INFO_STREAM("Init Finished!");
 
     // 设置要发送的数据  
