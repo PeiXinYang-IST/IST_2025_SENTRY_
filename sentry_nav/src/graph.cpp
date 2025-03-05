@@ -11,6 +11,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <cmath> // For sqrt and pow
+#include <std_msgs/Int32.h>
 
 // 定义边结构体
 struct Edge {
@@ -50,27 +51,35 @@ public:
         // addNode(16,6.651, -3.653, 0.000);
 
         ////////////////////  7v7 //////////////////////
-        addNode(1, 7.413, 5.873, 1.565);
-        addNode(2, 10.574, 8.712, 1.224);
-        addNode(3, 3.572, 8.419, 2.613);
-        addNode(4, 1.841, 9.794, 2.304);
-        addNode(5, 11.666, 9.827, 1.329);
-        addNode(6, 10.249, 2.959, -0.528);
-        addNode(7, 3.472, 3.155, -2.618);
-        addNode(8, 11.791, 13.232, 1.635);
-        addNode(9, 10.266, 13.840, 2.182);
-        addNode(10, 7.293, 11.793, 2.975);
-        addNode(11, 7.843, 16.136, -3.101);
-        addNode(12, 4.229, 14.377, 1.834);
-        addNode(13, 2.557, 16.344, 1.688);
-        addNode(14, 3.308, 17.697, 1.485);
-        addNode(15, 4.518, 19.295, 0.865);
-        addNode(16, 7.982, 20.364, 0.083);
-        addNode(17, 10.365, 20.025, -0.759);
-        addNode(18, 13.069, 17.983, -0.827);
-        addNode(19, 7.551, 22.791, 1.674);
-        addNode(20, 5.489, 24.585, 2.488);
-        addNode(21, 9.630, 24.650, 0.938);
+        // addNode(1, 7.413, 5.873, 1.565);
+        // addNode(2, 10.574, 8.712, 1.224);
+        // addNode(3, 3.572, 8.419, 2.613);
+        // addNode(4, 1.841, 9.794, 2.304);
+        // addNode(5, 11.666, 9.827, 1.329);
+        // addNode(6, 10.249, 2.959, -0.528);
+        // addNode(7, 3.472, 3.155, -2.618);
+        // addNode(8, 11.791, 13.232, 1.635);
+        // addNode(9, 10.266, 13.840, 2.182);
+        // addNode(10, 7.293, 11.793, 2.975);
+        // addNode(11, 7.843, 16.136, -3.101);
+        // addNode(12, 4.229, 14.377, 1.834);
+        // addNode(13, 2.557, 16.344, 1.688);
+        // addNode(14, 3.308, 17.697, 1.485);
+        // addNode(15, 4.518, 19.295, 0.865);
+        // addNode(16, 7.982, 20.364, 0.083);
+        // addNode(17, 10.365, 20.025, -0.759);
+        // addNode(18, 13.069, 17.983, -0.827);
+        // addNode(19, 7.551, 22.791, 1.674);
+        // addNode(20, 5.489, 24.585, 2.488);
+        // addNode(21, 9.630, 24.650, 0.938);
+
+        //TEST
+        addNode(0, 0.5, 0.5, 0);
+        addNode(1, 0.5, 0.5, 0);
+        addNode(2, 10.574, 8.712, 0);
+        addNode(3, 3.572, 8.419, 0);
+        addNode(4, 1.841, 9.794, 0);
+
 
         for (const auto& edge : edges) {
             addEdge(edge.first, edge.second.first, edge.second.second);
@@ -86,6 +95,12 @@ public:
         nav_points_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("nav_pose",10);
         marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_markers", 10);
         line_points_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("line_pose",10);
+        goal_pose_sub_ = nh_.subscribe("/ros1_game_state", 10, &Graph::goal_pose_callback, this);
+}
+
+void goal_pose_callback(const std_msgs::Int32::ConstPtr& msg)
+{
+    end_node.id = msg->data;
 }
 
 // 计算两点之间的欧几里得距离
@@ -107,7 +122,7 @@ int findNearestNode(const std::vector<Node>& nodes, const geometry_msgs::PoseSta
     }
     return nearest_node_id;
 }
-
+ 
     void start_pose_callback(const nav_msgs::Odometry::ConstPtr& msg)
     {
         static bool get_path_=false;
@@ -116,17 +131,21 @@ int findNearestNode(const std::vector<Node>& nodes, const geometry_msgs::PoseSta
         robot_pose_.pose.orientation = msg->pose.pose.orientation;
         start_node.id=findNearestNode(nodes,robot_pose_);
 
-        if(!get_path_)
-        {
-        std::cout << "Enter the target node ID: ";
-        std::cin >> end_node.id;
+        // static ros::Time last_time = ros::Time::now();
+        // ros::Duration interval(8.0); // 8 seconds interval
 
-        // 调用路径搜索方法
-        findShortestPath(start_node.id, end_node.id);
-        get_path_=true;
-        }
+        // if (ros::Time::now() - last_time >= interval) {
+        //     // std::cout << "Enter the target node ID: ";
+        //     // std::cin >> end_node.id;
+        //     end_node.id = (++end_node.id)%(nodes.size());
 
-        if(current_id!=start_node.id)
+        //     // 调用路径搜索方法
+        //     findShortestPath(start_node.id, end_node.id);
+        //     get_path_ = true;
+        //     last_time = ros::Time::now();
+        // }
+
+        if (current_id != start_node.id)
         findShortestPath(start_node.id, end_node.id);
 
         if(start_node.id==end_node.id)
@@ -219,7 +238,7 @@ void publishPathAsLines() {
     int current_node_id = current_path[0];
     int next_node_id = current_path[1];
 
-    geometry_msgs::Point next_pos = nodes[next_node_id - 1].position;
+    geometry_msgs::Point next_pos = nodes[next_node_id].position;
 
     // 计算方向向量
     double dx = next_pos.x - robot_pose_.pose.position.x;
@@ -386,10 +405,19 @@ private:
         // {19, {20, 1}},  {19, {21, 1}}, {19, {15, 1}}, {19, {16, 0.5}}, {19, {17, 1}}, 
         // {20, {19, 1}}, {20, {21, 1.5}}, {20, {16, 1.5}}, {20, {17, 2}}, 
         // {21, {19, 1}}, {21, {20, 1.5}}, {21, {15, 2}}, {21, {16, 1.7}}, {21, {17, 2}}, 
+
+        //TEST
+        {0, {1, 1}}, {0, {2, 1}},{0, {3, 1}},
+        {1, {2, 1}}, {1, {3, 1}},
+        {2, {1, 1}}, {2, {4, 1}},
+        {3, {1, 1}}, {3, {4, 1}},
+        {4, {2, 1}}, {4, {3, 1}},
+
         
     };
+
     ros::Subscriber start_pose_sub_;
-    ros::Subscriber goal_pose_sub_; // /move_base_simple/goal
+    ros::Subscriber goal_pose_sub_; 
     ros::Publisher marker_pub_;
     ros::Publisher nav_points_pub_; 
     ros::Publisher line_points_pub_; 

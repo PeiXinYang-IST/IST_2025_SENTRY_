@@ -17,7 +17,8 @@ KinodynamicAstar::~KinodynamicAstar()
 }
 
 int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, Eigen::Vector3d start_a,
-                             Eigen::Vector3d end_pt, Eigen::Vector3d end_v, bool init, bool dynamic, double time_start)
+                             Eigen::Vector3d end_pt, Eigen::Vector3d end_v,nav_msgs::Path &JPS_path,bool jps_updated
+                             ,bool init, bool dynamic, double time_start)
 {
   start_vel_ = start_v;
   start_acc_ = start_a;
@@ -36,7 +37,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
   end_state.head(3) = end_pt;
   end_state.tail(3) = end_v;
   end_index = posToIndex(end_pt);
-  cur_node->f_score = lambda_heu_ * estimateHeuristic(cur_node->state, end_state, time_to_goal);
+  cur_node->f_score = lambda_heu_ * estimateHeuristic(cur_node->state, end_state, time_to_goal,JPS_path,jps_updated);
   cur_node->node_state = IN_OPEN_SET;
   open_set_.push(cur_node);
   use_node_num_ += 1;
@@ -74,7 +75,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
       if (near_end)
       {
         // Check whether shot traj exist
-        estimateHeuristic(cur_node->state, end_state, time_to_goal);
+        estimateHeuristic(cur_node->state, end_state, time_to_goal,JPS_path,jps_updated);
         computeShotTraj(cur_node->state, end_state, time_to_goal);
         if (init_search)
           ROS_ERROR("Shot in first search loop!");
@@ -210,7 +211,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
 
         double time_to_goal, tmp_g_score, tmp_f_score;
         tmp_g_score = (um.squaredNorm() + w_time_) * tau + cur_node->g_score;
-        tmp_f_score = tmp_g_score + lambda_heu_ * estimateHeuristic(pro_state, end_state, time_to_goal);
+        tmp_f_score = tmp_g_score + lambda_heu_ * estimateHeuristic(pro_state, end_state, time_to_goal,JPS_path,jps_updated);
 
         // Compare nodes expanded from the same parent
         bool prune = false;
@@ -333,8 +334,14 @@ void KinodynamicAstar::retrievePath(PathNodePtr end_node)
 
   reverse(path_nodes_.begin(), path_nodes_.end());
 }
-double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x2, double& optimal_time)
+
+//使用当前与JPS的距离引导启发式函数
+//kdtree搜索最近邻节点
+double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x2, double& optimal_time,nav_msgs::Path &JPS_path,bool jps_updated)
 {
+
+  //jps_updated在目标点更新时为true
+
   const Vector3d dp = x2.head(3) - x1.head(3);
   const Vector3d v0 = x1.segment(3, 3);
   const Vector3d v1 = x2.segment(3, 3);
@@ -368,6 +375,18 @@ double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x
 
   optimal_time = t_d;
 
+ pcl::PointXYZ search_point;
+        search_point.x = x1[0];
+        search_point.y = x1[1];
+        search_point.z = x1[2];
+        
+        std::vector<int> indices(1);
+        std::vector<float> sqr_dists(1);
+        if (jps_kdtree_->nearestKSearch(search_point, 1, indices, sqr_dists) > 0) {
+            double jps_dist = sqrt(sqr_dists[0]);
+            cost += 0.3 * jps_dist; // 权重可调
+        }
+        
   return 1.0 * (1 + tie_breaker_) * cost;
 }
 

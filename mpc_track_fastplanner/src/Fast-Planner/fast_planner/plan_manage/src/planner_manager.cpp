@@ -29,32 +29,35 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   nh.param("manager/use_kinodynamic_path", use_kinodynamic_path, false);
   nh.param("manager/use_topo_path", use_topo_path, false);
   nh.param("manager/use_optimization", use_optimization, false);
-
+  raw_path_pub_ = nh.advertise<visualization_msgs::Marker>("/visual/raw_path", 1);
+  simplified_path_pub_ = nh.advertise<visualization_msgs::Marker>("/visual/simplified_path", 1);
   odom_sub = nh.subscribe("/odom", 1, &FastPlannerManager::odomCallback,this);
   grad_pub_ = nh.advertise<geometry_msgs::Vector3>("/grad", 100); //这里设置的是esdf地图的梯度向量
+  global_sub = nh.subscribe("/planning/global_enable", 1, &FastPlannerManager::globalCallback,this);
   dist_pub_ = nh.advertise<std_msgs::Float64>("/dist", 10);
   path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &FastPlannerManager::pathCallback, this);
+  JPS_sub = nh.subscribe("/jps_path", 10, &FastPlannerManager::JPS_pathCallback, this);
+  nav_pose_sub = nh.subscribe("/nav_pose", 1, &FastPlannerManager::nav_pose_Callback, this);
 
   local_data_.traj_id_ = 0;
   sdf_map_.reset(new SDFMap);
+  ROS_WARN("init path"); 
   sdf_map_->initMap(nh);
   edt_environment_.reset(new EDTEnvironment);
   edt_environment_->setMap(sdf_map_);
-
-  if (use_geometric_path) {
-    geo_path_finder_.reset(new Astar);
-    geo_path_finder_->setParam(nh);
-    geo_path_finder_->setEnvironment(edt_environment_);
-    geo_path_finder_->init();
-  }
-
+  ROS_WARN("init edt");
   if (use_kinodynamic_path) {
     kino_path_finder_.reset(new KinodynamicAstar);
     kino_path_finder_->setParam(nh);
     kino_path_finder_->setEnvironment(edt_environment_);
     kino_path_finder_->init();
   }
-
+  if (use_geometric_path) {
+    geo_path_finder_.reset(new Astar);
+    geo_path_finder_->setParam(nh);
+    geo_path_finder_->setEnvironment(edt_environment_);
+    geo_path_finder_->init();
+  }
   if (use_optimization) {
     bspline_optimizers_.resize(10);
     for (int i = 0; i < 10; ++i) {
@@ -63,7 +66,6 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
       bspline_optimizers_[i]->setEnvironment(edt_environment_);
     }
   }
-
   if (use_topo_path) {
     topo_prm_.reset(new TopologyPRM);
     topo_prm_->setEnvironment(edt_environment_);
@@ -71,55 +73,167 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   }
 }    
 
-void douglasPeucker(const std::vector<Eigen::Vector3d>& point_set, int start, int end, double epsilon, std::vector<Eigen::Vector3d>& out) {
-  if (start >= end) {
-    return;
-  }
+bool global_replan;
 
-  double max_dist = 0.0;
-  int index = start;
-
-  Eigen::Vector3d start_point = point_set[start];
-  Eigen::Vector3d end_point = point_set[end];
-
-  for (int i = start + 1; i < end; ++i) {
-    Eigen::Vector3d point = point_set[i];
-    double dist = ((end_point - start_point).cross(start_point - point)).norm() / (end_point - start_point).norm();
-    if (dist > max_dist) {
-      max_dist = dist;
-      index = i;
-    }
-  }
-
-  if (max_dist > epsilon) {
-    std::vector<Eigen::Vector3d> left_out, right_out;
-    douglasPeucker(point_set, start, index, epsilon, left_out);
-    douglasPeucker(point_set, index, end, epsilon, right_out);
-
-    out.insert(out.end(), left_out.begin(), left_out.end());
-    out.push_back(point_set[index]);
-    out.insert(out.end(), right_out.begin(), right_out.end());
-  } else {
-    out.push_back(start_point);
-    out.push_back(end_point);
-  }
+void FastPlannerManager::nav_pose_Callback(const geometry_msgs::PoseStamped::ConstPtr& msg){
+  current_nav_pose = *msg;
 }
 
-void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
-     // Implementation of the callback function
-     move_base_point_set.clear();
-      for (size_t i = 0; i < msg.poses.size(); i += 10) {
-        const auto& pose = msg.poses[i];
-        Eigen::Vector3d point;
-        point[0] = pose.pose.position.x;
-        point[1] = pose.pose.position.y;
-        point[2] = pose.pose.position.z;   
-      move_base_point_set.push_back(point);
-      // Apply Douglas-Peucker algorithm to extract key points
-      // std::vector<Eigen::Vector3d> key_points;
-      // douglasPeucker(move_base_point_set, 0, move_base_point_set.size() - 1, 0.15, key_points);
-      // move_base_point_set = key_points;
+//获取JPS路径 作为kinodynamic A* 前端引导
+void FastPlannerManager::JPS_pathCallback(const nav_msgs::Path::ConstPtr&msg){
+  if(current_nav_pose != last_nav_pose){
+    JPS_path_ = *msg;
+    last_nav_pose = current_nav_pose;
+  }
+  jps_updated = true;
+}
+
+void FastPlannerManager::visualizePaths(const std::vector<Eigen::Vector3d>& global_path,const std::vector<Eigen::Vector3d>& points) {
+  // ====================== 原始路径点（红色立方体） ========================
+  visualization_msgs::Marker raw_marker;
+  raw_marker.header.frame_id = "odom";   // 根据实际坐标系修改
+  raw_marker.header.stamp = ros::Time::now();
+  raw_marker.ns = "path_points";       // 命名空间
+  raw_marker.id = 0;                   // 唯一ID
+  raw_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  raw_marker.action = visualization_msgs::Marker::ADD;
+  
+  // 立方体尺寸
+  raw_marker.scale.x = 0.1;  // 球体宽度
+  raw_marker.scale.y = 0.1;  // 球体深度
+  raw_marker.scale.z = 0.2;  // 球体高度
+  
+  // 颜色 (RGBA, 红色半透明)
+  raw_marker.color.r = 1.0;
+  raw_marker.color.g = 0.0;
+  raw_marker.color.b = 0.0;
+  raw_marker.color.a = 0.8;  // 透明度
+
+  // 填充原始点
+  for (const auto& pt : global_path) {
+    geometry_msgs::Point p;
+    p.x = pt.x();
+    p.y = pt.y();
+    p.z = pt.z();  // 如果是2D路径，z设为固定值如0.1
+    raw_marker.points.push_back(p);
+  }
+
+  // =================== 简化后的关键点（绿色球体） ======================
+  visualization_msgs::Marker simplified_marker;
+  simplified_marker.header = raw_marker.header;
+  simplified_marker.ns = "path_points";
+  simplified_marker.id = 1;
+  simplified_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  simplified_marker.action = visualization_msgs::Marker::ADD;
+  
+  // 球体尺寸
+  simplified_marker.scale.x = 0.2;  // 球体直径
+  simplified_marker.scale.y = 0.2;
+  simplified_marker.scale.z = 0.2;
+  
+  // 颜色 (绿色不透明)
+  simplified_marker.color.r = 0.0;
+  simplified_marker.color.g = 1.0;
+  simplified_marker.color.b = 0.0;
+  simplified_marker.color.a = 1.0;
+
+  // 填充简化点
+  for (const auto& pt : points) {
+    geometry_msgs::Point p;
+    p.x = pt.x();
+    p.y = pt.y();
+    p.z = pt.z();
+    simplified_marker.points.push_back(p);
+  }
+
+  // 发布Marker
+  raw_path_pub_.publish(raw_marker);
+  simplified_path_pub_.publish(simplified_marker);
+}
+
+// 修改后的垂直距离计算函数
+double perpendicularDistance(const Eigen::Vector3d& pt, 
+                            const Eigen::Vector3d& lineStart, 
+                            const Eigen::Vector3d& lineEnd) {
+    // 处理线段退化为点的情况
+    if ((lineEnd - lineStart).norm() < 1e-6) {
+        return (pt - lineStart).norm(); 
     }
+    
+    // 计算点到直线的垂直距离
+    Eigen::Vector3d lineDir = (lineEnd - lineStart).normalized();
+    return (pt - lineStart).cross(lineDir).norm();
+}
+void FastPlannerManager::setGlobalWaypoints(vector<Eigen::Vector3d>& waypoints) {
+  plan_data_.global_waypoints_ = waypoints;
+}
+
+// 改进的Douglas-Peucker算法实现
+void douglasPeucker(const std::vector<Eigen::Vector3d>& points, 
+                   size_t start_idx, 
+                   size_t end_idx,
+                   double epsilon, 
+                   std::vector<Eigen::Vector3d>& result) {
+    if (end_idx - start_idx < 2) {
+        result.push_back(points[start_idx]);
+        return;
+    }
+
+    double max_dist = 0.0;
+    size_t max_idx = start_idx;
+    const auto& start_pt = points[start_idx];
+    const auto& end_pt = points[end_idx];
+
+    // 寻找最大偏离点
+    for (size_t i = start_idx + 1; i < end_idx; ++i) {
+        double dist = perpendicularDistance(points[i], start_pt, end_pt);
+        if (dist > max_dist) {
+            max_dist = dist;
+            max_idx = i;
+        }
+    }
+
+    // 递归处理子段
+    if (max_dist > epsilon) {
+        std::vector<Eigen::Vector3d> left_result, right_result;
+        douglasPeucker(points, start_idx, max_idx, epsilon, left_result);
+        douglasPeucker(points, max_idx, end_idx, epsilon, right_result);
+
+        result.insert(result.end(), left_result.begin(), left_result.end());
+        result.insert(result.end(), right_result.begin() + 1, right_result.end());
+    } else {
+        result.push_back(start_pt);
+        result.push_back(end_pt);
+    }
+}
+    std::vector<Eigen::Vector3d> simplified_points;
+void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
+    move_base_point_set.clear();
+    simplified_points.clear();
+    for (size_t i = 0; i < msg.poses.size(); i+=10) {
+        geometry_msgs::PoseStamped pose = msg.poses[i];
+        Eigen::Vector3d point(
+            pose.pose.position.x, 
+            pose.pose.position.y,
+            pose.pose.position.z
+        );
+        move_base_point_set.push_back(point);
+    }
+     
+
+    std::vector<Eigen::Vector3d> globla_path;
+    globla_path = move_base_point_set;
+    if (move_base_point_set.size() > 2) {
+        douglasPeucker(
+            move_base_point_set, 
+            0, 
+            move_base_point_set.size() - 1,
+            0.05,   // 可调阈值
+            simplified_points
+        );
+        move_base_point_set = simplified_points;
+    }
+    // visualizePaths(globla_path,move_base_point_set);
 }
 
 nav_msgs::Odometry odom;
@@ -143,8 +257,8 @@ void FastPlannerManager::odomCallback(const nav_msgs::Odometry &msg) {
   // ROS_WARN("grad_msg.y:%f",grad_msg.y);
 }
 
-void FastPlannerManager::setGlobalWaypoints(vector<Eigen::Vector3d>& waypoints) {
-  plan_data_.global_waypoints_ = waypoints;
+void FastPlannerManager::globalCallback(const std_msgs::Bool::ConstPtr& msg) {
+  global_replan = msg->data;
 }
 
 bool FastPlannerManager::checkTrajCollision(double& distance) {
@@ -216,15 +330,17 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
   t1 = ros::Time::now();
 
   kino_path_finder_->reset();
+  //kdtree搜索 扩展节点最近邻 添加启发式引导
+//添加JPS跳点作为前端引导来拯救局部最优解
 
-  int status = kino_path_finder_->search(start_pt, start_vel, start_acc, end_pt, end_vel, true);
+  int status = kino_path_finder_->search(simplified_points[0], start_vel, start_acc, end_pt, end_vel,JPS_path_,jps_updated,true);
 
   if (status == KinodynamicAstar::NO_PATH) {
     cout << "[kino replan]: kinodynamic search fail!" << endl;
 
     // retry searching with discontinuous initial state
     kino_path_finder_->reset();
-    status = kino_path_finder_->search(start_pt, start_vel, start_acc, end_pt, end_vel, false);
+    status = kino_path_finder_->search(start_pt, start_vel, start_acc, end_pt, end_vel,JPS_path_,jps_updated,false); 
 
     if (status == KinodynamicAstar::NO_PATH) {
       cout << "[kino replan]: Can't find path." << endl;
@@ -248,8 +364,15 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
   kino_path_finder_->getSamples(ts, point_set, start_end_derivatives);
 
   Eigen::MatrixXd ctrl_pts;
+  
+  if(global_replan)
   NonUniformBspline::parameterizeToBspline(ts, move_base_point_set, start_end_derivatives, ctrl_pts);
+  
+  else
+  NonUniformBspline::parameterizeToBspline(ts, point_set, start_end_derivatives, ctrl_pts);
+
   NonUniformBspline init(ctrl_pts, 3, ts);
+  visualizePaths(move_base_point_set,move_base_point_set);
 
   // bspline trajectory optimization
 

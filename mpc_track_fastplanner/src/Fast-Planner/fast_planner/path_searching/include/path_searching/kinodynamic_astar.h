@@ -13,6 +13,10 @@
 #include <unordered_map>
 #include <utility>
 #include "plan_env/edt_environment.h"
+#include <nav_msgs/Path.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 namespace fast_planner {
 // #define REACH_HORIZON 1
@@ -101,8 +105,14 @@ class NodeHashTable {
   }
 };
 
+
 class KinodynamicAstar {
  private:
+
+ // 替换为 PCL 的 KDTree 和点云
+    pcl::PointCloud<pcl::PointXYZ>::Ptr jps_cloud_;
+    pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr jps_kdtree_;
+
   /* ---------- main data structure ---------- */
   vector<PathNodePtr> path_node_pool_;
   int use_node_num_, iter_num_;
@@ -146,7 +156,7 @@ class KinodynamicAstar {
   bool computeShotTraj(Eigen::VectorXd state1, Eigen::VectorXd state2,
                        double time_to_goal);
   double estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x2,
-                           double& optimal_time);
+                           double& optimal_time,nav_msgs::Path &JPS_path,bool jps_updated);
 
   /* state propagation */
   void stateTransit(Eigen::Matrix<double, 6, 1>& state0,
@@ -154,9 +164,26 @@ class KinodynamicAstar {
                     double tau);
 
  public:
-  KinodynamicAstar(){};
+  KinodynamicAstar(){
+    jps_cloud_.reset(new pcl::PointCloud<pcl::PointXYZ>);
+    jps_kdtree_.reset(new pcl::KdTreeFLANN<pcl::PointXYZ>);
+  };
+
   ~KinodynamicAstar();
 
+
+void updateJPSPath(const nav_msgs::Path& path) {
+        jps_cloud_->clear();
+        for (const auto& pose : path.poses) {
+            pcl::PointXYZ pt;
+            pt.x = pose.pose.position.x;
+            pt.y = pose.pose.position.y;
+            pt.z = pose.pose.position.z;
+            jps_cloud_->push_back(pt);
+        }
+        jps_kdtree_->setInputCloud(jps_cloud_);
+    }
+    
   enum { REACH_HORIZON = 1, REACH_END = 2, NO_PATH = 3, NEAR_END = 4 };
 
   /* main API */
@@ -165,7 +192,7 @@ class KinodynamicAstar {
   void reset();
   int search(Eigen::Vector3d start_pt, Eigen::Vector3d start_vel,
              Eigen::Vector3d start_acc, Eigen::Vector3d end_pt,
-             Eigen::Vector3d end_vel, bool init, bool dynamic = false,
+             Eigen::Vector3d end_vel,nav_msgs::Path& JPS_path,bool jps_updated,bool init, bool dynamic = false,
              double time_start = -1.0);
 
   void setEnvironment(const EDTEnvironment::Ptr& env);

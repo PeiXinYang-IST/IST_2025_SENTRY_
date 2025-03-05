@@ -1,0 +1,5 @@
+<launch>
+    <node name = "map_server" pkg = "map_server" type = "map_server" args="$(find fast_lio_localization)/Map/demo2.yaml /map:=prior_map" respawn="true" >
+	<param name = "frame_id" value="odom" />
+</node>
+</launch>

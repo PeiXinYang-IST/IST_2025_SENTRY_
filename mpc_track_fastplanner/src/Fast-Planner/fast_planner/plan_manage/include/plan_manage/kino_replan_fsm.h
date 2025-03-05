@@ -82,10 +82,11 @@ private:
   bool get_path_;
   nav_msgs::Path global_path_;
   /* ROS utils */
-  ros::NodeHandle node_;
+  ros::NodeHandle node_;  
   ros::Timer exec_timer_, safety_timer_, vis_timer_, test_something_timer_;
   ros::Subscriber waypoint_sub_, odom_sub_,map_to_odom_sub_,path_sub_,fast_planner_sub_;
-  ros::Publisher replan_pub_, new_pub_, bspline_pub_,robot_pose_pub_;
+  ros::Publisher replan_pub_, new_pub_, bspline_pub_,global_pub_;
+
 
   /* helper functions */
   bool callKinodynamicReplan();        // front-end and back-end method
@@ -110,7 +111,6 @@ public:
   }
 
   void init(ros::NodeHandle& nh);
-
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 

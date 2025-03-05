@@ -5,7 +5,7 @@
 	<arg name="use_sim_time" value="false"/>
 	<arg name="map" default="$(find fast_lio)/PCD/demo.pcd" />
 	<!--faster_lio-->
-	<rosparam command="load" file="$(find faster_lio)/config/avia.yaml" />
+	<!-- <rosparam command="load" file="$(find faster_lio)/config/avia.yaml" />
 	<param name="feature_extract_enable" type="bool" value="0"/>
 	<param name="point_filter_num_" type="int" value="5"/>
 	<param name="max_iteration" type="int" value="5" />
@@ -13,10 +13,10 @@
 	<param name="filter_size_map" type="double" value="0.3" />
 	<param name="cube_side_length" type="double" value="100" />
 	<param name="runtime_pos_log_enable" type="bool" value="1" />
-    <node pkg="faster_lio" type="run_mapping_online" name="laserMapping" output="screen" respawn="true" />
+    <node pkg="faster_lio" type="run_mapping_online" name="laserMapping" output="screen" respawn="true" /> -->
 
 	<!-- fast_lio -->
-	<!-- <rosparam command="load" file="$(find fast_lio_localization)/config/mid360.yaml" />
+	<rosparam command="load" file="$(find fast_lio_localization)/config/mid360.yaml" />
 	<param name="feature_extract_enable" type="bool" value="0"/>
 	<param name="point_filter_num" type="int" value="3"/>
 	<param name="max_iteration" type="int" value="3" />
@@ -25,12 +25,11 @@
 	<param name="cube_side_length" type="double" value="1000" />
 	<param name="runtime_pos_log_enable" type="bool" value="0" />
     <param name= "pcd_save_en" type="bool" value="false"/>
-    <node pkg="fast_lio" type="fastlio_mapping" name="laserMapping" />  -->
+    <node pkg="fast_lio" type="fastlio_mapping" name="laserMapping" /> 
 
 <node pkg="fast_lio_localization" type="pcl_processing_node" name="pcl_processing_node" output="screen" respawn="true">
 	        <rosparam file="$(find fast_lio_localization)/config/pcl_processing.yaml" command="load"/>
 </node>
-
 	<!-- transform  fusion-->
     <node pkg="fast_lio_localization" type="transform_fusion.py" name="transform_fusion" output="screen" />
 

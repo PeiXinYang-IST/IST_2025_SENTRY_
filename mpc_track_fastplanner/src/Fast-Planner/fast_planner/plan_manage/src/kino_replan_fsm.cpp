@@ -38,8 +38,9 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
   odom_sub_ = nh.subscribe("/odom_world", 1, &KinoReplanFSM::odometryCallback, this);
   map_to_odom_sub_ = nh.subscribe("/MY_ICP/map_to_odom", 1, &KinoReplanFSM::map_to_odomcallback, this);
   replan_pub_  = nh.advertise<std_msgs::Empty>("/planning/replan", 10);
-  robot_pose_pub_  = nh.advertise<geometry_msgs::PoseStamped>("/robot_pose", 10);
+  // robot_pose_pub_  = nh.advertise<geometry_msgs::PoseStamped>("/robot_pose", 10);
   new_pub_     = nh.advertise<std_msgs::Empty>("/planning/new", 10);
+  global_pub_ = nh.advertise<std_msgs::Bool>("/planning/global_enable", 10);
   bspline_pub_ = nh.advertise<plan_manage::Bspline>("/planning/bspline", 10);
   path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &KinoReplanFSM::pathCallback, this);
   fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, &KinoReplanFSM::start_task, this);
@@ -112,7 +113,7 @@ if(get_path_){
   // robot_pose_.pose.position.z = odom_pos_(2);
   robot_pose_.header.frame_id = "odom";
   // robot_pose_.pose.orientation = tf2::toMsg(new_quat);
-  robot_pose_pub_.publish(robot_pose_);
+  // robot_pose_pub_.publish(robot_pose_);
   
   have_odom_ = true;
 }
@@ -167,20 +168,34 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
       start_pt_  = odom_pos_;
       start_vel_ = odom_vel_;
       start_acc_.setZero();
-
+      
       Eigen::Vector3d rot_x = odom_orient_.toRotationMatrix().block(0, 0, 3, 1);
       // start_yaw_(0)         = atan2(rot_x(1), rot_x(0));
       // start_yaw_(1) = start_yaw_(2) = 0.0;
       start_yaw_(0) = 0.0;
       start_yaw_(1) = 0.0;
       bool success = callKinodynamicReplan();
+      static int last_state = 0;
+      std_msgs::Bool global_msg;
       if (success) {
+        global_msg.data = false;
+        last_state = 0;
         changeFSMExecState(EXEC_TRAJ, "FSM");
       } else {
         // have_target_ = false;
         // changeFSMExecState(WAIT_TARGET, "FSM");
+        last_state++;
+        if(last_state > 5)  //这里之后就一直调用全局规划直到生成NEW轨迹success
+          global_msg.data = true;
+        
+        global_pub_.publish(global_msg);
         changeFSMExecState(GEN_NEW_TRAJ, "FSM");
       }
+
+      //这里大于10次时发布replan
+      std_msgs::Empty replan_msg;
+      replan_pub_.publish(replan_msg);
+
       break;
     }
 
@@ -375,6 +390,7 @@ bool KinoReplanFSM::callKinodynamicReplan() {
 
   } else {
     cout << "generate new traj fail." << endl;
+    
     return false;
   }
 }

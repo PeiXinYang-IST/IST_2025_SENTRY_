@@ -128,7 +128,7 @@
     <param name="search/resolution_astar" value="0.1" type="double"/><!--空间分辨率-->
     <param name="search/time_resolution" value="0.5" type="double"/><!--时间维度分辨率-->
     <param name="search/margin" value="0.35" type="double"/><!--检测碰撞-->
-    <param name="search/allocate_num" value="3000000" type="int"/><!--最大节点数目-->
+    <param name="search/allocate_num" value="30000000" type="int"/><!--最大节点数目-->
     <param name="search/check_num" value="5" type="int"/><!--对中间状态安全检查-->
 
   <!-- trajectory optimization -->

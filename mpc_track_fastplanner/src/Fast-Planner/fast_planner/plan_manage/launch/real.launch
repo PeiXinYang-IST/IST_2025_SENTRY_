@@ -85,6 +85,7 @@
     <param name="waypoint_type" value="manual-lonely-waypoint"/>    
   </node>  
 
+
   <node pkg="mpc_tracking" name="mpc_tracking_node" type="mpc_tracking_node" output="screen" respawn="true" />
 
 

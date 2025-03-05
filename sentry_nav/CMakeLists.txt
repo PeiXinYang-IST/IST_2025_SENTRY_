@@ -167,6 +167,7 @@ add_executable(icp_costmap_clear src/icp_costmap_clear.cpp)
 add_executable(BSP_line src/BSP_line.cpp)
 add_executable(global_to_local src/global_to_local.cpp)
 add_executable(graph src/graph.cpp)
+add_executable(JPS src/JPS.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -183,6 +184,9 @@ add_executable(graph src/graph.cpp)
 # )
 
 target_link_libraries(trans_tf_2d
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(JPS
   ${catkin_LIBRARIES}
 )
 target_link_libraries(graph

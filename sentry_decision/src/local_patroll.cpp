@@ -22,7 +22,7 @@ class local_patroll
 {
 private:
     /* data */
-    
+    void publishGoal(ros::Publisher& pub, double x, double y, double z);
 public:
     local_patroll(/* args */);
     ~local_patroll();
@@ -39,12 +39,26 @@ local_patroll::~local_patroll()
 
 }
 
+void local_patroll::publishGoal(ros::Publisher& pub, double x, double y, double z) {
+    geometry_msgs::PoseStamped goal;
+    goal.header.frame_id = "map";
+    goal.header.stamp = ros::Time::now();
+    goal.pose.position.x = x;
+    goal.pose.position.y = y;
+    goal.pose.orientation.z = z;
+    goal.pose.orientation.w = 1;
+    pub.publish(goal);
+}
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "local_patroll");
     ROS_INFO("begin");
     ros::NodeHandle nh;
-    // local_patroll local_patroll_(nh);
+    ros::Publisher goal_pub = nh.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 10);
+
+    size_t current_waypoint = 0;
+    ros::Rate rate(0.1); // 0.1 Hz -> 10 seconds
+
     ros::spin();
     return 0;
 }
