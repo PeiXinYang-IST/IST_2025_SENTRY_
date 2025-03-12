@@ -81,11 +81,11 @@ void FastPlannerManager::nav_pose_Callback(const geometry_msgs::PoseStamped::Con
 
 //获取JPS路径 作为kinodynamic A* 前端引导
 void FastPlannerManager::JPS_pathCallback(const nav_msgs::Path::ConstPtr&msg){
-  if(current_nav_pose != last_nav_pose){
+
     JPS_path_ = *msg;
-    last_nav_pose = current_nav_pose;
-  }
-  jps_updated = true;
+    last_nav_pose = current_nav_pose;  
+    jps_updated = true;
+  
 }
 
 void FastPlannerManager::visualizePaths(const std::vector<Eigen::Vector3d>& global_path,const std::vector<Eigen::Vector3d>& points) {
@@ -206,10 +206,13 @@ void douglasPeucker(const std::vector<Eigen::Vector3d>& points,
         result.push_back(end_pt);
     }
 }
-    std::vector<Eigen::Vector3d> simplified_points;
+
+std::vector<Eigen::Vector3d> simplified_points;
 void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
     move_base_point_set.clear();
     simplified_points.clear();
+
+    //提取路径稀疏点
     for (size_t i = 0; i < msg.poses.size(); i+=10) {
         geometry_msgs::PoseStamped pose = msg.poses[i];
         Eigen::Vector3d point(
@@ -219,8 +222,28 @@ void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
         );
         move_base_point_set.push_back(point);
     }
-     
+    
+    global_path.poses.clear();  // 清空路径点集合
+    
+    // 遍历所有路径点
+    for (const auto& point : move_base_point_set) {
+        geometry_msgs::PoseStamped pose_stamped;
+        
+        // 填充位置
+        pose_stamped.pose.position.x = point.x();
+        pose_stamped.pose.position.y = point.y();
+        pose_stamped.pose.position.z = point.z();  // 2D路径可设为0
+        
+        // 设置方向（默认朝向下一个点）
+        pose_stamped.pose.orientation.w = 1.0;  // 无旋转
+        
+        // 设置时间戳和坐标系
+        pose_stamped.header = global_path.header;
+        
+        global_path.poses.push_back(pose_stamped);
+    }
 
+    //提取路径关键点
     std::vector<Eigen::Vector3d> globla_path;
     globla_path = move_base_point_set;
     if (move_base_point_set.size() > 2) {
@@ -231,15 +254,14 @@ void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
             0.05,   // 可调阈值
             simplified_points
         );
-        move_base_point_set = simplified_points;
+        // move_base_point_set = simplified_points;
     }
-    // visualizePaths(globla_path,move_base_point_set);
+    visualizePaths(globla_path,move_base_point_set);
 }
 
 nav_msgs::Odometry odom;
 Eigen::Vector3d odom_pos;
 void FastPlannerManager::odomCallback(const nav_msgs::Odometry &msg) {
-
   odom_pos[0] = msg.pose.pose.position.x;
   odom_pos[1] = msg.pose.pose.position.y;
   odom_pos[2] = msg.pose.pose.position.z;
@@ -253,8 +275,6 @@ void FastPlannerManager::odomCallback(const nav_msgs::Odometry &msg) {
   grad_msg.y = mpc_grad.y();
   grad_msg.z = mpc_grad.z();
   grad_pub_.publish(grad_msg);
-  // ROS_WARN("grad_msg.x:%f",grad_msg.x);
-  // ROS_WARN("grad_msg.y:%f",grad_msg.y);
 }
 
 void FastPlannerManager::globalCallback(const std_msgs::Bool::ConstPtr& msg) {
@@ -333,14 +353,14 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
   //kdtree搜索 扩展节点最近邻 添加启发式引导
 //添加JPS跳点作为前端引导来拯救局部最优解
 
-  int status = kino_path_finder_->search(simplified_points[0], start_vel, start_acc, end_pt, end_vel,JPS_path_,jps_updated,true);
+  int status = kino_path_finder_->search(simplified_points[0], start_vel, start_acc, end_pt, end_vel,global_path,jps_updated,true);
 
   if (status == KinodynamicAstar::NO_PATH) {
     cout << "[kino replan]: kinodynamic search fail!" << endl;
 
     // retry searching with discontinuous initial state
     kino_path_finder_->reset();
-    status = kino_path_finder_->search(start_pt, start_vel, start_acc, end_pt, end_vel,JPS_path_,jps_updated,false); 
+    status = kino_path_finder_->search(start_pt, start_vel, start_acc, end_pt, end_vel,global_path,jps_updated,false); 
 
     if (status == KinodynamicAstar::NO_PATH) {
       cout << "[kino replan]: Can't find path." << endl;
@@ -364,11 +384,7 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
   kino_path_finder_->getSamples(ts, point_set, start_end_derivatives);
 
   Eigen::MatrixXd ctrl_pts;
-  
-  if(global_replan)
-  NonUniformBspline::parameterizeToBspline(ts, move_base_point_set, start_end_derivatives, ctrl_pts);
-  
-  else
+  visualizePaths(point_set,point_set);
   NonUniformBspline::parameterizeToBspline(ts, point_set, start_end_derivatives, ctrl_pts);
 
   NonUniformBspline init(ctrl_pts, 3, ts);

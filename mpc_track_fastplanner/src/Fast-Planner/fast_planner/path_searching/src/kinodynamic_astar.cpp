@@ -37,7 +37,9 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
   end_state.head(3) = end_pt;
   end_state.tail(3) = end_v;
   end_index = posToIndex(end_pt);
+  ROS_WARN("ESTIMATE HEURISTIC");
   cur_node->f_score = lambda_heu_ * estimateHeuristic(cur_node->state, end_state, time_to_goal,JPS_path,jps_updated);
+  ROS_WARN("ESTIMATE HEURISTIC DONE");
   cur_node->node_state = IN_OPEN_SET;
   open_set_.push(cur_node);
   use_node_num_ += 1;
@@ -339,7 +341,6 @@ void KinodynamicAstar::retrievePath(PathNodePtr end_node)
 //kdtree搜索最近邻节点
 double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x2, double& optimal_time,nav_msgs::Path &JPS_path,bool jps_updated)
 {
-
   //jps_updated在目标点更新时为true
 
   const Vector3d dp = x2.head(3) - x1.head(3);
@@ -372,19 +373,50 @@ double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x
       t_d = t;
     }
   }
-
+  // ROS_WARN("COST: %f",cost);
   optimal_time = t_d;
+
+//1   根据JPS路径的距离引导启发式函数
+
+// 当JPS路径更新时重建KDTree
+    // 将JPS路径转换为点云
+    jps_cloud_->clear();
+    for (auto& pose : JPS_path.poses) {
+        pcl::PointXYZ pt;
+        pt.x = pose.pose.position.x;
+        pt.y = pose.pose.position.y;
+        pt.z = 0;  // 2D路径忽略Z坐标
+        jps_cloud_->push_back(pt);
+    }
+    
+    // 更新KDTree
+    jps_kdtree_->setInputCloud(jps_cloud_);
 
  pcl::PointXYZ search_point;
         search_point.x = x1[0];
         search_point.y = x1[1];
         search_point.z = x1[2];
         
+    if (!jps_kdtree_) {
+    ROS_ERROR("KDTree not initialized!");
+    return cost;  // 返回基准启发值
+}
+
+
+// 检查点云数据是否为空
+if (jps_cloud_->empty()) {
+    ROS_ERROR("JPS path cloud is empty");
+    return cost;
+}
+
         std::vector<int> indices(1);
         std::vector<float> sqr_dists(1);
         if (jps_kdtree_->nearestKSearch(search_point, 1, indices, sqr_dists) > 0) {
             double jps_dist = sqrt(sqr_dists[0]);
-            cost += 0.3 * jps_dist; // 权重可调
+            // ROS_WARN("JPS distance: %f", jps_dist);
+            cost += 1000.0 * jps_dist; // 权重可调
+            // ROS_WARN("jps+COST: %f",cost);
+
         }
         
   return 1.0 * (1 + tie_breaker_) * cost;

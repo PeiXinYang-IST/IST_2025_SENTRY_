@@ -6,9 +6,8 @@ global_costmap:
   update_frequency: 15.0 #代价地图更新频率
   publish_frequency: 15.0 #代价地图的发布频率
   transform_tolerance: 3 #等待坐标变换发布信息的超时时间
-  inflation_radius: 0.4    #0.8
+  inflation_radius: 0.25    #0.8
   cost_scaling_factor:  5.0 
-
   static_map: true # 是否使用一个地图或者地图服务器来初始化全局代价地图，如果不使用静态地图，这个参数为false.
 
   recovery_behaviors:

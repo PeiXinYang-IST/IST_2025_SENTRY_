@@ -50,11 +50,10 @@ public:
   vector<Eigen::Vector3d> move_base_point_set;
   ros::Publisher raw_path_pub_;
   ros::Publisher simplified_path_pub_;
-  nav_msgs::Path JPS_path_;
+  nav_msgs::Path JPS_path_,global_path;
 private:
   /* main planning algorithms & modules */
   SDFMap::Ptr sdf_map_;
-
   unique_ptr<Astar> geo_path_finder_;
   unique_ptr<KinodynamicAstar> kino_path_finder_;
   unique_ptr<TopologyPRM> topo_prm_;

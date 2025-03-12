@@ -75,7 +75,7 @@ private:
   geometry_msgs::PoseStamped robot_pose;
   Eigen::Vector3d odom_pos_, odom_vel_;  // odometry state
   Eigen::Quaterniond odom_orient_;
-
+  ros::Time trajectory_start_time_;  // 新增：轨迹绝对开始时间
   Eigen::Vector3d start_pt_, start_vel_, start_acc_, start_yaw_;  // start state
   Eigen::Vector3d end_pt_, end_vel_;                              // target state
   int current_wp_;

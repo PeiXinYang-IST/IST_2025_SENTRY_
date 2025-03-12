@@ -177,7 +177,7 @@ public:
 
                 if (!path.empty()) {
                     publishPath(path);
-                    ROS_WARN("Path found!");
+                    // ROS_WARN("Path found!");
                 }
             }
             rate.sleep();

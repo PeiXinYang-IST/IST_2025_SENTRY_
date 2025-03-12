@@ -76,7 +76,6 @@ void MY_ICP::mappointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input
 {
         pcl::fromROSMsg(*input, *map_cloud_);   
 }
-
 // NEXTE_Sentry_Nav
 // IST_2025_sentry
 

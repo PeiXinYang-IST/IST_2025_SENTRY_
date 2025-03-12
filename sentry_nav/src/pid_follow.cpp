@@ -100,7 +100,7 @@ public:
         nh_.param("i_max_", i_max_, 0.05);
         nh_.param("K_ffc_static", K_ffc_static, 0.0);
         nh_.param("K_ffc_dynamic", K_ffc_dynamic, 0.0);
-        nh_.param("goal_dist_tolerance",goal_dist_tolerance_,0.65);
+        nh_.param("goal_dist_tolerance",goal_dist_tolerance_,0.5);
         nh_.param("far_goal_dist_tolerance",far_goal_dist_tolerance_,0.6);
         nh_.param("far_far_goal_dist_tolerance",far_far_goal_dist_tolerance_,1.5);
         nh_.param("set_yaw_speed",set_yaw_speed_,0.8);
@@ -120,6 +120,7 @@ public:
         local_path_pub_=nh_.advertise<nav_msgs::Path>("pid_local_path",10);
         pid_clear_costmap_pub_=nh_.advertise<std_msgs::Bool>("pid_clear_costmap",10);
         move_base_start_sub_ = nh_.subscribe("MY_ICP/move_base_start", 10, &PIDPathFollower::moveBaseStartCallback, this);
+        velocity_marker_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("velocity_marker", 10);
     }
 
     ~PIDPathFollower() {
@@ -150,15 +151,21 @@ public:
         plan_ = true;
     }
 
-    void map_to_odom_callback(const geometry_msgs::TransformStamped::ConstPtr& msg)
-    {
+void map_to_odom_callback(const geometry_msgs::TransformStamped::ConstPtr& msg) {
+        // 归一化接收到的四元数
+        tf2::Quaternion quat;
+        tf2::fromMsg(msg->transform.rotation, quat);
+        quat.normalize();
+        
+        // 更新变换信息
         map_to_odom_transform = *msg;
+        map_to_odom_transform.transform.rotation = tf2::toMsg(quat);
     }
 
     void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
         boost::mutex::scoped_lock lock(odom_mutex_);
         // 直接将里程计数据中的 pose 部分作为机器人位置
-        robot_pose_.pose.position.x = msg->pose.pose.position.x-0.10;
+        robot_pose_.pose.position.x = msg->pose.pose.position.x;
         robot_pose_.pose.position.y = msg->pose.pose.position.y;
         robot_pose_.pose.position.z = msg->pose.pose.position.z;
         robot_pose_.pose.orientation = msg->pose.pose.orientation;
@@ -310,6 +317,8 @@ private:
     ros::Publisher local_path_pub_;
     ros::Subscriber move_base_start_sub_;
     ros::Publisher vel_pub_;
+    ros::Publisher velocity_marker_pub_;
+    ros::Publisher navigation_pub;
     nav_msgs::Path global_path_;
     nav_msgs::Path Teb_path_;
     nav_msgs::Path prune_path_, local_path_;
@@ -355,14 +364,14 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
             double diff_distance = GetEuclideanDistance(robot_pose,traj.poses[1]);
             double yaw_error,last_yaw_error,target_yaw;
 
-        yaw_ = tf::getYaw(robot_pose.pose.orientation);
+        // yaw_ = tf::getYaw(robot_pose.pose.orientation);
 
         // set it from -PI t
-        if(yaw_ > M_PI){
-            yaw_ -= 2*M_PI;
-        } else if(yaw_ < -M_PI){
-            yaw_ += 2*M_PI;
-        }
+        // if(yaw_ > M_PI){
+        //     yaw_ -= 2*M_PI;
+        // } else if(yaw_ < -M_PI){
+        //     yaw_ += 2*M_PI;
+        // }
         
         // set it from -PI t
         if(diff_yaw > M_PI){
@@ -371,12 +380,12 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
             diff_yaw += 2*M_PI;
         }
 
-        double vx_global = max_speed_*cos(diff_yaw);//*diff_distance*p_value_;  //这里直接采用最大速度原因是，为了追求追踪性能，
-        //采用跟踪位置不如直接对速度方向进行处理
-        double vy_global = max_speed_*sin(diff_yaw);//*diff_distance*p_value_;
+        // double vx_global = max_speed_*cos(diff_yaw);//*diff_distance*p_value_;  //这里直接采用最大速度原因是，为了追求追踪性能，FAST!!!
+        // //采用跟踪位置不如直接对速度方向进行处理
+        // double vy_global = max_speed_*sin(diff_yaw);//*diff_distance*p_value_;
 
-            //    double vx_global =pid_calc(pid_typedef,diff_x,0);
-            //    double vy_global =pid_calc(pid_typedef,diff_y,0);
+               double vx_global =pid_calc(pid_typedef,diff_x,0);
+               double vy_global =pid_calc(pid_typedef,diff_y,0);
 
         // double vx_global = cos(diff_yaw)*pid_p_*diff_distance*pid_p_;
         // double vy_global = sin(diff_yaw)*pid_p_*diff_distance*pid_p_;
@@ -384,20 +393,20 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
         ros::Time now = ros::Time::now();
         double dt = (now - last_time_).toSec();
         last_time_ = now;
-            
+        
         yaw_pose = prune_path_.poses.back();
         target_pose_pub_.publish(yaw_pose);
 
         // 计算Yaw误差
-        target_yaw = atan2(yaw_pose.pose.position.y - robot_pose.pose.position.y, yaw_pose.pose.position.x - robot_pose.pose.position.x);
-        yaw_error = -(target_yaw-yaw_-2+0.8415);
+        // target_yaw = atan2(yaw_pose.pose.position.y - robot_pose.pose.position.y, yaw_pose.pose.position.x - robot_pose.pose.position.x);
+        // yaw_error = -(target_yaw-yaw_-2+0.8415);
     
-        // set it from -PI t
-        if(yaw_error > M_PI){
-            yaw_error -= 2*M_PI;
-        } else if(yaw_error < -M_PI){
-            yaw_error += 2*M_PI;
-        }
+        // // set it from -PI t
+        // if(yaw_error > M_PI){
+        //     yaw_error -= 2*M_PI;
+        // } else if(yaw_error < -M_PI){
+        //     yaw_error += 2*M_PI;
+        // }
 
         // //设立伪车头
         // if(abs(yaw_error)>2.0)
@@ -408,12 +417,12 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
         //     yaw_error -= 2*M_PI;
         // } else if(yaw_error < -M_PI){1
 
-        yaw_error = (1-0.2)*yaw_error + 0.2*last_yaw_error;
-        last_yaw_error = yaw_error;
+        // yaw_error = (1-0.2)*yaw_error + 0.2*last_yaw_error;
+        // last_yaw_error = yaw_error;
  
         // 更新Yaw误差
-        cmd_vel.angular.z = pid_calc(pid_typedef,yaw_error,0);
-        cmd_vel.angular.z = LIMIT_MIN_MAX(cmd_vel.angular.z,-set_max_yaw_speed_,set_max_yaw_speed_); // 直接使用yaw_error更新
+        // cmd_vel.angular.z = pid_calc(pid_typedef,yaw_error,0);
+        // cmd_vel.angular.z = LIMIT_MIN_MAX(cmd_vel.angular.z,-set_max_yaw_speed_,set_max_yaw_speed_); // 直接使用yaw_error更新
         
         // set it from -PI t
         if(yaw_ > M_PI){
@@ -432,14 +441,18 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
         cmd_vel.linear.y = (1-alpha_)*cmd_vel.linear.y+alpha_*last_linear_vy;
 
         //根据yaw轴偏差 进行减速
-        cmd_vel.linear.x = cmd_vel.linear.x/abs(cmd_vel.linear.x) * fmax(abs(cmd_vel.linear.x)-0.5*abs(yaw_error),0);
-        cmd_vel.linear.y = cmd_vel.linear.y/abs(cmd_vel.linear.y) * fmax(abs(cmd_vel.linear.y)-0.5*abs(yaw_error),0);
+        // cmd_vel.linear.x = cmd_vel.linear.x/abs(cmd_vel.linear.x) * fmax(abs(cmd_vel.linear.x)-0.5*abs(yaw_error),0);
+        // cmd_vel.linear.y = cmd_vel.linear.y/abs(cmd_vel.linear.y) * fmax(abs(cmd_vel.linear.y)-0.5*abs(yaw_error),0);
+
         // 可视化速度方向
         geometry_msgs::PoseStamped velocity_marker;
         velocity_marker.header.frame_id = "odom";
         velocity_marker.header.stamp = ros::Time::now();
         velocity_marker.pose.position = robot_pose.pose.position;
-        velocity_marker.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(cmd_vel.linear.y, cmd_vel.linear.x));
+        tf2::Quaternion vel_quat;
+        vel_quat.setRPY(0, 0, atan2(cmd_vel.linear.y, cmd_vel.linear.x));
+        vel_quat.normalize();
+        velocity_marker.pose.orientation = tf2::toMsg(vel_quat);
         vel_pub_.publish(velocity_marker);
 
         if (GetEuclideanDistance(robot_pose,global_path_.poses.back())<= far_far_goal_dist_tolerance_){
@@ -451,7 +464,7 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
             last_linear_vx = cmd_vel.linear.x;
             last_linear_vy = cmd_vel.linear.y;
             last_angular_vw = cmd_vel.angular.z;
-            
+
 #ifdef ifdebug_
             ROS_INFO("yaw_: %f",yaw_);
             ROS_INFO("target_yaw: %f",target_yaw);

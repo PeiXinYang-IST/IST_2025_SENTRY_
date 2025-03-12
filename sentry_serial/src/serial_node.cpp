@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 
 	// try
 	// {
-	// 	ser.setPort("/dev/ttyACM0");s
+	// 	ser.setPort("/dev/ttyACM0");
 	// 	//设置要打开串口名称
 	// 	ser.setBaudrate(115200);
 	// 	//设置波特率
@@ -169,16 +169,16 @@ int main(int argc, char **argv)
 	// {
 	// 	return -1;
 	// }
-    ROS_INFO_STREAM("Init Finished!");
+    // ROS_INFO_STREAM("Init Finished!");
 
     // 设置要发送的数据  
     //std::string message = "Hello from ROS!";   
 	
     // 创建一个Subscriber，订阅名为smooth_cmd_cel的topic，注册回调函数chatterCallback 
-    ros::Subscriber sub = nh.subscribe(cmd_vel_topic, 1000, callback); 
+    // ros::Subscriber sub = nh.subscribe(cmd_vel_topic, 1000, callback); 
     ros::Subscriber restart_sub = nh.subscribe("MY_ICP/restart", 1000, restart_callback); 
     ros::Subscriber mpc_sub = nh.subscribe("mpc_cmd_vel", 1000, mpc_cmd_vel_callback); 
-    ros::Subscriber pid_sub = nh.subscribe("pid_cmd_vel", 1000, pid_cmd_vel_callback); 
+    ros::Subscriber pid_sub = nh.subscribe("/pid_follow/pid_cmd_vel", 1000, pid_cmd_vel_callback); 
 
     ros::Subscriber odom_sub = nh.subscribe("odom", 1000, odom_callback); 
     ros::Subscriber yaw_sub = nh.subscribe("Obstacle_cloudget/yaw_angle", 1000, yaw_callback); 

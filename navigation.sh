@@ -32,7 +32,7 @@ restart_nodes() {
 
     sleep 1
 
-    # 启动faster_lio节点
+    # 启动lio节点
     roslaunch fast_lio_localization sentry_localize.launch &
     PID_FAST_LIO=$!
     echo "Fast Lio relaunched with PID: $PID_FAST_LIO"
@@ -44,10 +44,10 @@ restart_nodes() {
     PID_NAV=$!
     echo "NAV relaunched with PID: $PID_NAV"
  
-    sleep 1
-    # roslaunch plan_manage real.launch &
-    # PID_FAST_PLANNER=$!
-    # echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
+    # sleep 1
+    roslaunch plan_manage real.launch &
+    PID_FAST_PLANNER=$!
+    echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
     # 启动Serial节点
     # roslaunch sentry_serial serial.launch &

@@ -207,7 +207,7 @@ void publish_control_cmd(const ros::TimerEvent &e) {
       cout << "[Traj server]: invalid time." << endl;
   }
 
-    auto result = mpc_ptr->solve(current_state, desired_state,dist,gradient,0.25);
+    auto result = mpc_ptr->solve(current_state, desired_state,dist,gradient,-1.0);
     geometry_msgs::Twist cmd;
     cmd.linear.x = result[0];
     cmd.linear.y = result[1];
@@ -221,7 +221,7 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     double desired_y = cmd.linear.y;
 
     // 限制最大阶跃
-    const double max_step = 1.5;
+    const double max_step = 0.5;
 
     // 计算速度变化矢量
     double delta_x = desired_x - current_x;
@@ -264,8 +264,8 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     //cout << "u:" << result[0] << " " << "r:" << result[1] << endl;
 
     navigation.yaw.data=yaw_angle;
-	  navigation.x.data=cmd.linear.x;
-	  navigation.y.data=cmd.linear.y;
+	  navigation.x.data=cmd.linear.x*0.4;
+	  navigation.y.data=cmd.linear.y*0.4;
 	  navigation.z.data=cmd.linear.z;
 	  navigation_pub.publish(navigation);
 

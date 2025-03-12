@@ -35,7 +35,7 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
   safety_timer_ = nh.createTimer(ros::Duration(0.05), &KinoReplanFSM::checkCollisionCallback, this);
 
   waypoint_sub_ =  nh.subscribe("/waypoint_generator/waypoints", 1, &KinoReplanFSM::waypointCallback, this);
-  odom_sub_ = nh.subscribe("/odom_world", 1, &KinoReplanFSM::odometryCallback, this);
+  odom_sub_ = nh.subscribe("/odom", 1, &KinoReplanFSM::odometryCallback, this);
   map_to_odom_sub_ = nh.subscribe("/MY_ICP/map_to_odom", 1, &KinoReplanFSM::map_to_odomcallback, this);
   replan_pub_  = nh.advertise<std_msgs::Empty>("/planning/replan", 10);
   // robot_pose_pub_  = nh.advertise<geometry_msgs::PoseStamped>("/robot_pose", 10);
@@ -44,6 +44,7 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
   bspline_pub_ = nh.advertise<plan_manage::Bspline>("/planning/bspline", 10);
   path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &KinoReplanFSM::pathCallback, this);
   fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, &KinoReplanFSM::start_task, this);
+  trajectory_start_time_ = ros::Time::now();  // 初始化为当前时间
 }
 
 void KinoReplanFSM::waypointCallback(const nav_msgs::PathConstPtr& msg) {
@@ -89,12 +90,13 @@ void KinoReplanFSM::start_task(const std_msgs::Bool::ConstPtr& msg){
   fast_planner_start = true;
 }
 
+//设置目标点
 void KinoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
 if(get_path_){
   geometry_msgs::PoseStamped robot_pose_;
   global_path_.header.frame_id = "odom";
   global_path_.header.stamp = ros::Time::now();
-  odom_pos_(0) = global_path_.poses[0].pose.position.x+0.11;
+  odom_pos_(0) = global_path_.poses[0].pose.position.x;
   odom_pos_(1) = global_path_.poses[0].pose.position.y;
   odom_pos_(2) = global_path_.poses[0].pose.position.z;
 
@@ -178,23 +180,16 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
       static int last_state = 0;
       std_msgs::Bool global_msg;
       if (success) {
-        global_msg.data = false;
-        last_state = 0;
         changeFSMExecState(EXEC_TRAJ, "FSM");
       } else {
         // have_target_ = false;
         // changeFSMExecState(WAIT_TARGET, "FSM");
-        last_state++;
-        if(last_state > 5)  //这里之后就一直调用全局规划直到生成NEW轨迹success
-          global_msg.data = true;
-        
-        global_pub_.publish(global_msg);
         changeFSMExecState(GEN_NEW_TRAJ, "FSM");
       }
 
       //这里大于10次时发布replan
       std_msgs::Empty replan_msg;
-      replan_pub_.publish(replan_msg);
+      // replan_pub_.publish(replan_msg);
 
       break;
     }
@@ -253,6 +248,7 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
 
       bool success = callKinodynamicReplan();
       if (success) {
+        trajectory_start_time_ = ros::Time::now();
         changeFSMExecState(EXEC_TRAJ, "FSM");
       } else {
         changeFSMExecState(GEN_NEW_TRAJ, "FSM");
@@ -268,10 +264,10 @@ void KinoReplanFSM::checkCollisionCallback(const ros::TimerEvent& e) {
   if (have_target_) {
     auto edt_env = planner_manager_->edt_environment_;
 
-    double dist = planner_manager_->pp_.dynamic_ ?
-        edt_env->evaluateCoarseEDT(end_pt_, /* time to program start + */ info->duration_) :
-        edt_env->evaluateCoarseEDT(end_pt_, -1.0);
-
+double end_time = (ros::Time::now() - trajectory_start_time_).toSec() + info->duration_;
+double dist = planner_manager_->pp_.dynamic_ ?
+        edt_env->evaluateCoarseEDT(end_pt_, end_time) :  // 动态模式使用绝对时间
+        edt_env->evaluateCoarseEDT(end_pt_, -1.0);      // 静态模式忽略时间
     if (dist <= 0.1) {
       /* try to find a max distance goal around */
       bool            new_goal = false;
@@ -289,7 +285,7 @@ void KinoReplanFSM::checkCollisionCallback(const ros::TimerEvent& e) {
 
             Eigen::Vector3d new_pt(new_x, new_y, new_z);
             dist = planner_manager_->pp_.dynamic_ ?
-                edt_env->evaluateCoarseEDT(new_pt, /* time to program start+ */ info->duration_) :
+                edt_env->evaluateCoarseEDT(new_pt, end_time) :
                 edt_env->evaluateCoarseEDT(new_pt, -1.0);
 
             if (dist > max_dist) {
@@ -303,7 +299,7 @@ void KinoReplanFSM::checkCollisionCallback(const ros::TimerEvent& e) {
         }
       }
 
-      if (max_dist > 0.3) {
+      if (max_dist > 0.15) {
         cout << "change goal, replan." << endl;
         end_pt_      = goal;
         have_target_ = true;
