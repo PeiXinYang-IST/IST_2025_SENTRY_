@@ -264,17 +264,17 @@ void KinoReplanFSM::checkCollisionCallback(const ros::TimerEvent& e) {
   if (have_target_) {
     auto edt_env = planner_manager_->edt_environment_;
 
-double end_time = (ros::Time::now() - trajectory_start_time_).toSec() + info->duration_;
-double dist = planner_manager_->pp_.dynamic_ ?
-        edt_env->evaluateCoarseEDT(end_pt_, end_time) :  // 动态模式使用绝对时间
-        edt_env->evaluateCoarseEDT(end_pt_, -1.0);      // 静态模式忽略时间
-    if (dist <= 0.1) {
+    double dist = planner_manager_->pp_.dynamic_ ?
+        edt_env->evaluateCoarseEDT(end_pt_, /* time to program start + */ info->duration_) :
+        edt_env->evaluateCoarseEDT(end_pt_, -1.0);
+
+    if (dist <= 0.2) {
       /* try to find a max distance goal around */
       bool            new_goal = false;
-      const double    dr = 0.3, dtheta = 360, dz = 0;
+      const double    dr = 0.15, dtheta = 15, dz = 0.001;
       double          new_x, new_y, new_z, max_dist = -1.0;
       Eigen::Vector3d goal;
-
+      
       for (double r = dr; r <= 5 * dr + 1e-3; r += dr) {
         for (double theta = -90; theta <= 270; theta += dtheta) {
           for (double nz = 1 * dz; nz >= -1 * dz; nz -= dz) {
@@ -285,7 +285,7 @@ double dist = planner_manager_->pp_.dynamic_ ?
 
             Eigen::Vector3d new_pt(new_x, new_y, new_z);
             dist = planner_manager_->pp_.dynamic_ ?
-                edt_env->evaluateCoarseEDT(new_pt, end_time) :
+                edt_env->evaluateCoarseEDT(new_pt, /* time to program start+ */ info->duration_) :
                 edt_env->evaluateCoarseEDT(new_pt, -1.0);
 
             if (dist > max_dist) {
@@ -299,7 +299,7 @@ double dist = planner_manager_->pp_.dynamic_ ?
         }
       }
 
-      if (max_dist > 0.15) {
+      if (max_dist > 0.2) {
         cout << "change goal, replan." << endl;
         end_pt_      = goal;
         have_target_ = true;

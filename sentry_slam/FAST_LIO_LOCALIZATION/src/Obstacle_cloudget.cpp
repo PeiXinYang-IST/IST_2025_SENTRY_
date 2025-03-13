@@ -432,7 +432,7 @@ void Obstacle_cloud_get::calculateYawPitch() {
 
     yaw_msg.data = yaw_deg;
     yaw_pub_.publish(yaw_msg);
-    ROS_WARN("yaw_angle: %.2f degrees", yaw_deg);
+    // ROS_WARN("yaw_angle: %.2f degrees", yaw_deg);
 }
 
 void Obstacle_cloud_get::visual_centroid(const pcl::PointXYZ point)
