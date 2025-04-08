@@ -13,10 +13,12 @@ Panels:
         - /Odometry1/Odometry1/Covariance1
         - /Odometry1/Odometry1/Covariance1/Position1
         - /Odometry1/Odometry1/Covariance1/Orientation1
+        - /Localization1
         - /Localization1/cur_scan_in_map1
         - /Localization1/localization1/Shape1
         - /MarkerArray1/Namespaces1
         - /PointCloud22/Autocompute Value Bounds1
+        - /Pose4
       Splitter Ratio: 0.6352941393852234
     Tree Height: 519
   - Class: rviz/Selection
@@ -68,7 +70,7 @@ Visualization Manager:
       Length: 0.699999988079071
       Name: Axes
       Radius: 0.05999999865889549
-      Reference Frame: body_foot
+      Reference Frame: laser_scan
       Show Trail: false
       Value: true
     - Class: rviz/Group
@@ -225,7 +227,7 @@ Visualization Manager:
           Size (Pixels): 2
           Size (m): 0.30000001192092896
           Style: Points
-          Topic: /MY_ICP/icp_prior_map
+          Topic: /map
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -493,7 +495,7 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.574999988079071
+        Max Value: 0.07500000298023224
         Min Value: 0.02500000037252903
         Value: true
       Axis: Z
@@ -619,7 +621,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
-      Topic: /robot_pose
+      Topic: /pid_follow/target_pose
       Unreliable: false
       Value: true
     - Alpha: 0.699999988079071
@@ -733,7 +735,7 @@ Visualization Manager:
       Marker Topic: /planning_vis/trajectory
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -741,7 +743,7 @@ Visualization Manager:
       Marker Topic: /visual/simplified_path
       Name: Marker
       Namespaces:
-        {}
+        path_points: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -749,7 +751,7 @@ Visualization Manager:
       Marker Topic: /planning/position_cmd_vis
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -780,7 +782,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.430143356323242
+      Distance: 4.819939136505127
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -788,17 +790,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.2895193099975586
-        Y: 0.33816757798194885
-        Z: -1.1636765003204346
+        X: 1.195526123046875
+        Y: -0.019570454955101013
+        Z: -1.3408136367797852
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.114796757698059
+      Pitch: 1.399796485900879
       Target Frame: <Fixed Frame>
-      Yaw: 2.354241371154785
+      Yaw: 2.9923529624938965
     Saved: ~
 Window Geometry:
   Displays:
@@ -816,5 +818,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1387
-  X: 533
-  Y: 112
+  X: 249
+  Y: 27

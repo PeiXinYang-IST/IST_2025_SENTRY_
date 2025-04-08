@@ -27,15 +27,15 @@
     <param name= "pcd_save_en" type="bool" value="false"/>
     <node pkg="fast_lio" type="fastlio_mapping" name="laserMapping" /> 
 
-<node pkg="fast_lio_localization" type="pcl_processing_node" name="pcl_processing_node" output="screen" respawn="true">
+<node pkg="fast_lio_localization" type="pcl_processing_node" name="pcl_processing_node" output="log" respawn="true">
 	        <rosparam file="$(find fast_lio_localization)/config/pcl_processing.yaml" command="load"/>
 </node>
 
 	<!-- transform  fusion-->
-    <node pkg="fast_lio_localization" type="transform_fusion.py" name="transform_fusion" output="screen" />
+    <node pkg="fast_lio_localization" type="transform_fusion.py" name="transform_fusion" output="log" />
 
 	<!-- glbal map-->
-    <node pkg="pcl_ros" type="pcd_to_pointcloud" name="map_publishe" output="screen"
+    <node pkg="pcl_ros" type="pcd_to_pointcloud" name="map_publishe" output="log"
 		  args="$(arg map) 5 _frame_id:=odom cloud_pcd:=map" />
 
 	<group if="$(arg rviz)">
@@ -59,13 +59,13 @@
 	</include>
  
 	<!-- 发布一个雷达body到机器人足端body_foot的静态映射 -->
-	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_1" args="0 0 0.35 0 0 0 body body_foot" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_1" args="0 0 0.4 0 0 0 body body_foot" />
 
 	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_4" args="0 0 0 0 0 0 camera_init odom" /> -->
 	<!-- 发布一个雷达初始位置camera_init到机器人足端初始位置body_init的静态映射 -->
 	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_2" args="0 0 0 0 0 0 body_foot odom" />
 	<!-- 2d平面重合的点云 -->
-	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_3" args="0.0 0 0.5 0 0 0 body laser_scan" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_3" args="0.0 0.105 0.4 0 0 0 body laser_scan" />
 	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_pub_4" args="0 0 0 0 3.141 0 odom odom_double" /> -->
 	
 	<!-- 发布一个雷达初始位置camera_init到map的静态映射 -->

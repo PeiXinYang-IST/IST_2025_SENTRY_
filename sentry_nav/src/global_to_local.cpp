@@ -1,86 +1,200 @@
 #include <ros/ros.h>
-#include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <cmath>
+#include <vector>
 #include <std_msgs/Bool.h>
+#include <std_msgs/UInt8.h>
 
-class Global_to_Local
-{
-private:
-    ros::NodeHandle nh_;
-    nav_msgs::Path global_path_;
-    ros::Subscriber global_path_sub_;
-    ros::Publisher goal_pose_pub_;
-    ros::Publisher start_pose_pub_;
-    geometry_msgs::PoseStamped goal_pose;  // 局部目标点
-    geometry_msgs::PoseStamped start_pose; // 车体当前点，即全局路径开始点
-
-    // 计算两点间的欧氏距离
-    double euclideanDistance(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2) {
-        return std::sqrt(std::pow(p2.pose.position.x - p1.pose.position.x, 2) +
-                         std::pow(p2.pose.position.y - p1.pose.position.y, 2));
-    }
-
+class GoalPublisher {
 public:
-    // 处理全局路径的回调函数
-    void pathCallback(const nav_msgs::Path::ConstPtr& msg) {
-        global_path_ = *msg;  // 更新全局路径
-        if (!global_path_.poses.empty()) {
-            get_goal_pose();  // 获取目标点
-        }
+    GoalPublisher() : nh_("~") {
+        // 初始化发布订阅
+        pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 10);
+        sub_ = nh_.subscribe("/ros2_game_state", 10, &GoalPublisher::gameStateCallback, this);
+        
+        // 初始化路径点
+        initializeWaypoints();
     }
 
-    // 获取目标点：在 2 米范围内选最远的点
-    void get_goal_pose() {
-        static geometry_msgs::PoseStamped current_goal_pose;
-        if (global_path_.poses.empty()) return;
+private:
+    void initializeWaypoints() {
+        geometry_msgs::PoseStamped waypoint;
+        waypoint.header.frame_id = "odom";
+        // 中心增益区 0
+        waypoint.pose.position.x = -1.8;
+        waypoint.pose.position.y = 4.7;
+        waypoint.pose.orientation.z = 0.760;
+        waypoint.pose.orientation.w = 0.650;
+        waypoints_.push_back(waypoint);       
+        // waypoint.pose.position.x = -1.8;
+        // waypoint.pose.position.y = 4.7;
+        // waypoint.pose.orientation.z = 0.760;
+        // waypoint.pose.orientation.w = 0.650;`
+        // waypoints_.push_back(waypoint);     
+        // 补给区 1
+        waypoint.pose.position.x = 0.0;
+        waypoint.pose.position.y = 0.0;
+        waypoint.pose.orientation.z = 0.760;
+        waypoint.pose.orientation.w = 0.650;
+        waypoints_.push_back(waypoint);
+        // waypoint.pose.position.x = 1.05;
+        // waypoint.pose.position.y = -0.55;
+        // waypoint.pose.orientation.z = 0.760;
+        // waypoint.pose.orientation.w = 0.650;
+        // waypoints_.push_back(waypoint);        //击打增益区 2
+        waypoint.pose.position.x = 0.2;
+        waypoint.pose.position.y = 5.0;
+        waypoint.pose.orientation.z = 0.760;
+        waypoint.pose.orientation.w = 0.650;
+        waypoints_.push_back(waypoint);
+    }
 
-        start_pose = global_path_.poses[0];  // 设定起始点为路径的第一个点
-        double max_distance = 0.0;  // 最大距离初始化
+    void gameStateCallback(const std_msgs::UInt8::ConstPtr& msg) {
+        // 解析状态
+        const uint8_t pos_state = msg->data;
 
-        // 遍历路径点，寻找 2 米内最远的点
-        for (int i = 1; i < global_path_.poses.size(); ++i) {
-            double dist = euclideanDistance(start_pose, global_path_.poses[i]);
-            if (dist <= 2.0 && dist > max_distance) {  // 只考虑 2 米内的点
-                max_distance = dist;
-                goal_pose = global_path_.poses[i];  // 更新最远点
-            }
-        }
+        // 状态切换处理
+        handleStateTransition(pos_state);
+    }
 
-        // 如果找到了有效的目标点
-        if (max_distance > 0) {
-            goal_pose = goal_pose;  // 更新目标点
-            if(euclideanDistance(goal_pose,current_goal_pose)>0.15)
-            {
-            goal_pose_pub_.publish(goal_pose);
-            current_goal_pose = goal_pose;
-            }
-            ROS_INFO("Goal Pose set at distance: %f meters", max_distance);
+    void handleStateTransition(uint8_t new_pos_state) {
+        // 状态未变化时不做处理
+        if (new_pos_state == current_pos_state_) return;
+
+        // 立即发布新状态对应目标点
+        publishWaypoint(new_pos_state);
+        
+        // 停止之前的定时器
+        stopStateTimer();
+        
+        // 启动新状态对应的定时器
+        startStateTimer(new_pos_state);
+        
+        // 更新当前状态记录
+        current_pos_state_ = new_pos_state;
+    }
+
+    void publishWaypoint(uint8_t state) {
+        geometry_msgs::PoseStamped pose_msg;
+        pose_msg.header.stamp = ros::Time::now();
+        pose_msg.header.frame_id = "odom";
+        
+        // 根据状态选择目标点索引
+        int index;
+        if (state == 0) {
+            index = 0;
+        } else if (state == 1) {
+            index = 1;
+        } else if (state == 2) {
+            index = 2;
         } else {
-            ROS_WARN("No valid goal pose found within 2 meters.");
+            ROS_WARN("Invalid state: %d", state);
+            return;
+        }
+        
+        pose_msg.pose = waypoints_[index].pose;
+        pub_.publish(pose_msg);
+    }
+
+    void startStateTimer(uint8_t state) {
+        // 创建循环定时器（每8秒触发一次）
+        state_timer_ = nh_.createTimer(ros::Duration(8.0), 
+            [this, state](const ros::TimerEvent&) {
+                // 验证状态是否仍然有效
+                if (current_pos_state_ == state) {
+                    publishWaypoint(state);  // 持续状态则重复发布
+                }
+            }, 
+            false  // 循环触发
+        );
+    }
+
+
+    void stopStateTimer() {
+        if (state_timer_.isValid()) {
+            state_timer_.stop();
         }
     }
 
-    Global_to_Local();
-    ~Global_to_Local();
+    ros::NodeHandle nh_;
+    ros::Publisher pub_;
+    ros::Subscriber sub_;
+    ros::Timer state_timer_;  // 状态持续定时器
+    
+    // 状态记录变量
+    uint8_t current_pos_state_ = 10;
+    
+    std::vector<geometry_msgs::PoseStamped> waypoints_;
 };
 
-Global_to_Local::Global_to_Local()
-{
-    nh_ = ros::NodeHandle("~");
-    global_path_sub_ = nh_.subscribe("/move_base1/NavfnROS/plan", 10, &Global_to_Local::pathCallback, this);
-    goal_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/goal_pose", 10);  // 发布目标点
-}
-
-Global_to_Local::~Global_to_Local()
-{
-}
-
 int main(int argc, char** argv) {
-    ros::init(argc, argv, "global_to_local");
-
-    Global_to_Local global_to_local;
-
-    ros::spin();  // 保持节点运行
+    ros::init(argc, argv, "goal_publisher");
+    GoalPublisher goal_publisher;
+    ros::spin();
     return 0;
 }
+
+// #include <ros/ros.h>
+// #include <geometry_msgs/PoseStamped.h>
+// #include <vector>
+
+// class GoalPublisher
+// {
+// public:
+//     GoalPublisher()
+//     {
+//         // Initialize ROS node handle and publisher
+//         pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 10);
+
+//         // Initialize waypoints
+//         initializeWaypoints();
+
+//         // Set timer to publish waypoints every 8 seconds
+//         timer_ = nh_.createTimer(ros::Duration(8.0), &GoalPublisher::timerCallback, this);
+//     }
+//         private:
+//             void initializeWaypoints()
+//             {
+//                 geometry_msgs::PoseStamped waypoint;
+//                 waypoint.header.frame_id = "odom";
+
+//                 // Add first waypoint
+//                 waypoint.pose.position.x = -3.377;
+//                 waypoint.pose.position.y = 0.485;
+//                 waypoint.pose.orientation.w = 1.0;
+//                 waypoints_.push_back(waypoint);
+
+//                 // Add second waypoint
+//                 waypoint.pose.position.x = -0.306;
+//                 waypoint.pose.position.y = -1.304;
+//                 waypoint.pose.orientation.w = 1.0;
+//                 waypoints_.push_back(waypoint);
+//             }
+
+//     void timerCallback(const ros::TimerEvent&)
+//     {
+//         geometry_msgs::PoseStamped pose_msg;
+//         pose_msg.header.stamp = ros::Time::now();
+//         pose_msg.header.frame_id = "odom";
+//         pose_msg.pose = waypoints_[current_waypoint_].pose;
+//         pose_msg.pose.orientation.w = 1.0;
+//         // Publish the current waypoint
+//         pub_.publish(pose_msg);
+
+//         // Move to the next waypoint, loop back to the first if at the end
+//         current_waypoint_ = (current_waypoint_ + 1) % waypoints_.size();
+//     }
+
+//     ros::NodeHandle nh_;
+//     ros::Publisher pub_;
+//     ros::Timer timer_;
+//     std::vector<geometry_msgs::PoseStamped> waypoints_;
+//     size_t current_waypoint_ = 0;
+// };
+
+// int main(int argc, char** argv)
+// {
+//     ros::init(argc, argv, "goal_publisher");
+//     GoalPublisher goal_publisher;
+//     ros::spin();
+//     return 0;
+// }

@@ -37,9 +37,9 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
   end_state.head(3) = end_pt;
   end_state.tail(3) = end_v;
   end_index = posToIndex(end_pt);
-  ROS_WARN("ESTIMATE HEURISTIC");
+  //ROS_WARN("ESTIMATE HEURISTIC");
   cur_node->f_score = lambda_heu_ * estimateHeuristic(cur_node->state, end_state, time_to_goal,JPS_path,jps_updated);
-  ROS_WARN("ESTIMATE HEURISTIC DONE");
+  //ROS_WARN("ESTIMATE HEURISTIC DONE");
   cur_node->node_state = IN_OPEN_SET;
   open_set_.push(cur_node);
   use_node_num_ += 1;
@@ -397,18 +397,16 @@ double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x
         search_point.y = x1[1];
         search_point.z = x1[2];
         
-//     if (!jps_kdtree_) {
-//     ROS_ERROR("KDTree not initialized!");
-//     return cost;  // 返回基准启发值
-// }
+    if (!jps_kdtree_) {
+    ROS_ERROR("KDTree not initialized!");
+    return 1.0 * (1 + tie_breaker_) * cost;  // 返回基准启发值
+}
 
-
-// // 检查点云数据是否为空
-// if (jps_cloud_->empty()) {
-//     ROS_ERROR("JPS path cloud is empty");
-//     return cost;
-// }
-
+ // 检查点云数据是否为空
+if (jps_cloud_->empty()) {
+    ROS_ERROR("JPS path cloud is empty");
+    return 1.0 * (1 + tie_breaker_) * cost;
+}
         std::vector<int> indices(1);
         std::vector<float> sqr_dists(1);
         if (jps_kdtree_->nearestKSearch(search_point, 1, indices, sqr_dists) > 0) {
@@ -416,9 +414,7 @@ double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x
             // ROS_WARN("JPS distance: %f", jps_dist);
             cost += 1000.0 * jps_dist; // 权重可调
             // ROS_WARN("jps+COST: %f",cost); 
-
-        }
-        
+        }    
   return 1.0 * (1 + tie_breaker_) * cost;
 }
 

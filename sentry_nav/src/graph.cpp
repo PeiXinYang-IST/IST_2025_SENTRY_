@@ -29,7 +29,7 @@ struct Node {
 // 定义图结构
 class Graph {
 public:
-    Graph() : nh_("~"),path_update(false) {
+    Graph() : path_update(false) {
 
         // 添加节点
         ////////////////////  3v3 //////////////////////
@@ -74,12 +74,10 @@ public:
         // addNode(21, 9.630, 24.650, 0.938);
 
         //TEST
-        addNode(0, 0.5, 0.5, 0);
-        addNode(1, 0.5, 0.5, 0);
-        addNode(2, 10.574, 8.712, 0);
-        addNode(3, 3.572, 8.419, 0);
-        addNode(4, 1.841, 9.794, 0);
-
+        addNode(0, -2.578, 2.154, 0);
+        addNode(1, -1.0, 0.608, 0);
+        addNode(2, -0.343, 2.543, 0);
+        addNode(3, -3.434, -0.322, 0);
 
         for (const auto& edge : edges) {
             addEdge(edge.first, edge.second.first, edge.second.second);
@@ -92,7 +90,7 @@ public:
             std::cerr << "Failed to create thread: " << e.what() << std::endl;
         }
         start_pose_sub_ = nh_.subscribe("/odom", 10, &Graph::start_pose_callback, this);
-        nav_points_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("nav_pose",10);
+        nav_points_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal",10);
         marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_markers", 10);
         line_points_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("line_pose",10);
         goal_pose_sub_ = nh_.subscribe("/ros1_game_state", 10, &Graph::goal_pose_callback, this);
@@ -131,19 +129,19 @@ int findNearestNode(const std::vector<Node>& nodes, const geometry_msgs::PoseSta
         robot_pose_.pose.orientation = msg->pose.pose.orientation;
         start_node.id=findNearestNode(nodes,robot_pose_);
 
-        // static ros::Time last_time = ros::Time::now();
-        // ros::Duration interval(8.0); // 8 seconds interval
+        static ros::Time last_time = ros::Time::now();
+        ros::Duration interval(8.0); // 8 seconds interval
 
-        // if (ros::Time::now() - last_time >= interval) {
-        //     // std::cout << "Enter the target node ID: ";
-        //     // std::cin >> end_node.id;
-        //     end_node.id = (++end_node.id)%(nodes.size());
+        if (ros::Time::now() - last_time >= interval) {
+            // std::cout << "Enter the target node ID: ";
+            // std::cin >> end_node.id;
+            end_node.id = (++end_node.id)%(nodes.size());
 
-        //     // 调用路径搜索方法
-        //     findShortestPath(start_node.id, end_node.id);
-        //     get_path_ = true;
-        //     last_time = ros::Time::now();
-        // }
+            // 调用路径搜索方法
+            findShortestPath(start_node.id, end_node.id);
+            get_path_ = true;
+            last_time = ros::Time::now();
+        }
 
         if (current_id != start_node.id)
         findShortestPath(start_node.id, end_node.id);
@@ -167,9 +165,9 @@ int findNearestNode(const std::vector<Node>& nodes, const geometry_msgs::PoseSta
             if (start_node.id == current_path.front()) {
                 // 发布到下一个节点的 pose
                 pose_msg.header.stamp = ros::Time::now();
-                pose_msg.header.frame_id = "map";
+                pose_msg.header.frame_id = "odom";
                 pose_msg.pose.position = nodes[current_path[1] - 1].position; // 获取下一个节点的位置
-
+                pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
                 publishPointsInFrontOfRobot();
             }
             if(current_pose!=pose_msg)
@@ -408,10 +406,9 @@ private:
 
         //TEST
         {0, {1, 1}}, {0, {2, 1}},{0, {3, 1}},
-        {1, {2, 1}}, {1, {3, 1}},
-        {2, {1, 1}}, {2, {4, 1}},
-        {3, {1, 1}}, {3, {4, 1}},
-        {4, {2, 1}}, {4, {3, 1}},
+        {1, {2, 1}}, {1, {3, 1}},{1, {0, 1}},
+        {2, {1, 1}}, {2, {4, 1}},{2, {3, 1}},
+        {3, {1, 1}}, {3, {4, 1}},{3, {2, 1}}
 
         
     };

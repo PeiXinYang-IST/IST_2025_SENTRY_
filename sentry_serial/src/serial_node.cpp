@@ -14,6 +14,9 @@ float smooth_cmd_vel_y;
 float cmd_vel_x;
 float cmd_vel_y;
 float cmd_vel_z;
+float pid_cmd_vel_x;
+float pid_cmd_vel_y;
+float pid_cmd_vel_z;
 
 sentry_serial::navigation navigation;
 
@@ -81,9 +84,9 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     // //ser.write(serial_package.Send_Buffer,data_len);
 	// ser.write(test_data,22);
 	navigation.yaw.data=yaw;
-	navigation.x.data=serial_package.linear_x;
-	navigation.y.data=serial_package.linear_y;
-	navigation.z.data=serial_package.angular_z;
+	navigation.x.data=pid_cmd_vel_x;
+	navigation.y.data=pid_cmd_vel_y;
+	navigation.z.data=pid_cmd_vel_z;
 	navigation_pub.publish(navigation);
 }
 
@@ -94,9 +97,9 @@ void yaw_callback(const std_msgs::Float32& msg)
 
 void mpc_cmd_vel_callback(const geometry_msgs::Twist& cmd_vel)
 {
-	cmd_vel_x=cmd_vel.linear.x;
-	cmd_vel_y=cmd_vel.linear.y;
-	cmd_vel_z=cmd_vel.linear.z;
+	pid_cmd_vel_x=cmd_vel.linear.x;
+	pid_cmd_vel_y=cmd_vel.linear.y;
+	pid_cmd_vel_z=cmd_vel.linear.z;
 
 	serial_package.linear_x = cmd_vel_x*0.25;
     serial_package.linear_y = -cmd_vel_y*0.25;

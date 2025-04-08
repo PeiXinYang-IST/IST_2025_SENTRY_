@@ -51,6 +51,12 @@ public:
         while(ros::ok())
         {
             static int check_path;
+            static int time_count;
+            if(++time_count>=10) //1s检查一次
+            {
+                //clear_costmap_client_.call(srv);
+                time_count=0;
+            }
             if(++check_path>=10 && plan_) //1s检查一次
         {
             if(global_path_.poses.empty())

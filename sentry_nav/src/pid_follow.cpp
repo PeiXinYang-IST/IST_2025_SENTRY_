@@ -194,7 +194,6 @@ void map_to_odom_callback(const geometry_msgs::TransformStamped::ConstPtr& msg) 
 void SmoothPathSegment(nav_msgs::Path& prior_path, nav_msgs::Path& smoothed_path, const nav_msgs::Path& global_path, const geometry_msgs::PoseStamped& robot_pose, double distance_threshold) {
     double accumulated_distance = 0.0;
     int start_index = 0;
-
     // 找到机器人最近的路径点
     double min_distance = std::numeric_limits<double>::max();
     for (size_t i = 0; i < global_path.poses.size(); ++i) {
@@ -356,10 +355,17 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
         static bool get_target;
 // double diff_yaw = GetYawFromOrientation(traj.poses[0].pose.orientation)- GetYawFromOrientation(robot_pose.pose.orientation);
             
-            double diff_y = traj.poses[1].pose.position.y-robot_pose.pose.position.y;
-            double diff_x = traj.poses[1].pose.position.x-robot_pose.pose.position.x;  //弥补静态映射的偏差
+            if (traj.poses.size() < 7) {
+                ROS_WARN("Trajectory has less than 2 poses, cannot calculate PID.");
+                cmd_vel.linear.x = 0;
+                cmd_vel.linear.y = 0;
+                cmd_vel.angular.z = 0;
+                return;
+            }
+            double diff_y = traj.poses[8].pose.position.y-robot_pose.pose.position.y;
+            double diff_x = traj.poses[8].pose.position.x-robot_pose.pose.position.x;  //弥补静态映射的偏差
             
-            double diff_yaw = atan2((traj.poses[1].pose.position.y-robot_pose.pose.position.y ),( traj.poses[1].pose.position.x-robot_pose.pose.position.x));
+            double diff_yaw = atan2((traj.poses[8].pose.position.y-robot_pose.pose.position.y ),( traj.poses[8].pose.position.x-robot_pose.pose.position.x));
 
             double diff_distance = GetEuclideanDistance(robot_pose,traj.poses[1]);
             double yaw_error,last_yaw_error,target_yaw;
@@ -380,12 +386,12 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
             diff_yaw += 2*M_PI;
         }
 
-        // double vx_global = max_speed_*cos(diff_yaw);//*diff_distance*p_value_;  //这里直接采用最大速度原因是，为了追求追踪性能，FAST!!!
-        // //采用跟踪位置不如直接对速度方向进行处理
-        // double vy_global = max_speed_*sin(diff_yaw);//*diff_distance*p_value_;
+        double vx_global = max_speed_*cos(diff_yaw);//*diff_distance*p_value_;  //这里直接采用最大速度原因是，为了追求追踪性能，FAST!!!
+        //采用跟踪位置不如直接对速度方向进行处理
+        double vy_global = max_speed_*sin(diff_yaw);//*diff_distance*p_value_;
 
-               double vx_global =pid_calc(pid_typedef,diff_x,0);
-               double vy_global =pid_calc(pid_typedef,diff_y,0);
+            //    double vx_global =pid_calc(pid_typedef,diff_x,0);
+            //    double vy_global =pid_calc(pid_typedef,diff_y,0);
 
         // double vx_global = cos(diff_yaw)*pid_p_*diff_distance*pid_p_;
         // double vy_global = sin(diff_yaw)*pid_p_*diff_distance*pid_p_;
@@ -394,8 +400,8 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
         double dt = (now - last_time_).toSec();
         last_time_ = now;
         
-        yaw_pose = prune_path_.poses.back();
-        target_pose_pub_.publish(yaw_pose);
+        // yaw_pose = traj.poses[8];
+        // target_pose_pub_.publish(yaw_pose);
 
         // 计算Yaw误差
         // target_yaw = atan2(yaw_pose.pose.position.y - robot_pose.pose.position.y, yaw_pose.pose.position.x - robot_pose.pose.position.x);
@@ -443,17 +449,6 @@ void calculatePID(const geometry_msgs::PoseStamped& robot_pose,
         //根据yaw轴偏差 进行减速
         // cmd_vel.linear.x = cmd_vel.linear.x/abs(cmd_vel.linear.x) * fmax(abs(cmd_vel.linear.x)-0.5*abs(yaw_error),0);
         // cmd_vel.linear.y = cmd_vel.linear.y/abs(cmd_vel.linear.y) * fmax(abs(cmd_vel.linear.y)-0.5*abs(yaw_error),0);
-
-        // 可视化速度方向
-        geometry_msgs::PoseStamped velocity_marker;
-        velocity_marker.header.frame_id = "odom";
-        velocity_marker.header.stamp = ros::Time::now();
-        velocity_marker.pose.position = robot_pose.pose.position;
-        tf2::Quaternion vel_quat;
-        vel_quat.setRPY(0, 0, atan2(cmd_vel.linear.y, cmd_vel.linear.x));
-        vel_quat.normalize();
-        velocity_marker.pose.orientation = tf2::toMsg(vel_quat);
-        vel_pub_.publish(velocity_marker);
 
         if (GetEuclideanDistance(robot_pose,global_path_.poses.back())<= far_far_goal_dist_tolerance_){
                 cmd_vel.linear.x = vx_global*GetEuclideanDistance(robot_pose,global_path_.poses.back())/2;

@@ -5,8 +5,8 @@
         <param name = "frame_id" type="str" value="robot_foot_init" />
         <param name = "sensor_model/max_range" value="1000.0" />
         <param name = "latch" value="true" />
-        <param name = "pointcloud_max_z" value="-0.3" />
-        <param name = "pointcloud_min_z" value="-0.5" />
+        <param name = "pointcloud_max_z" value="-0.0" />
+        <param name = "pointcloud_min_z" value="-0.7" />
 
         <remap from ="cloud_in" to="/cloud_registered" />
     </node>

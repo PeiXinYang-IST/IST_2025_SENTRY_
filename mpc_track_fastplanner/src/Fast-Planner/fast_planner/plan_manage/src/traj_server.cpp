@@ -247,11 +247,12 @@ void cmdCallback(const ros::TimerEvent& e) {
   drawCmd(pos, acc, 1, Eigen::Vector4d(0, 0, 1, 1));
 
   Eigen::Vector3d dir(cos(yaw), sin(yaw), 0.0);
-  // drawCmd(pos, 2 * dir, 2, Eigen::Vector4d(1, 1, 0, 0.7));
-  // drawCmd(pos, pos_err, 3, Eigen::Vector4d(1, 1, 0, 0.7));
+  drawCmd(pos, 2 * dir, 2, Eigen::Vector4d(1, 1, 0, 0.7));
+  //drawCmd(pos, pos_err, 3, Eigen::Vector4d(1, 1, 0, 0.7));
   traj_cmd_.push_back(pos);
   if (traj_cmd_.size() > 10000) traj_cmd_.erase(traj_cmd_.begin(), traj_cmd_.begin() + 1000);
 }
+
 
 void cmdvelCallback(const geometry_msgs::Twist& cmd_vel)
 {

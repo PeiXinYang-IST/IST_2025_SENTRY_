@@ -242,6 +242,7 @@ include_directories(
   target_link_libraries( serial_node
   ${catkin_LIBRARIES}
   )
+  
   target_link_libraries( goal_send_node
   ${catkin_LIBRARIES}
   )

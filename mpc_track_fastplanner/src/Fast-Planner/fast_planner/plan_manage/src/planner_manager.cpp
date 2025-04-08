@@ -213,7 +213,7 @@ void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
     simplified_points.clear();
 
     //提取路径稀疏点
-    for (size_t i = 0; i < msg.poses.size(); i+=10) {
+    for (size_t i = 0; i < msg.poses.size(); i+=1) {
         geometry_msgs::PoseStamped pose = msg.poses[i];
         Eigen::Vector3d point(
             pose.pose.position.x, 
@@ -222,8 +222,22 @@ void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
         );
         move_base_point_set.push_back(point);
     }
+
+    //提取路径关键点
+    std::vector<Eigen::Vector3d> globla_path;
+    globla_path = move_base_point_set;
+    // if (move_base_point_set.size() > 2) {
+    //     douglasPeucker(
+    //         move_base_point_set, 
+    //         0, 
+    //         move_base_point_set.size() - 1,
+    //         0.1,   // 可调阈值
+    //         simplified_points
+    //     );
+    //     //move_base_point_set = simplified_points;
+    // }
     
-    global_path.poses.clear();  // 清空路径点集合
+      global_path.poses.clear();  // 清空路径点集合
     
     // 遍历所有路径点
     for (const auto& point : move_base_point_set) {
@@ -242,21 +256,7 @@ void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
         
         global_path.poses.push_back(pose_stamped);
     }
-
-    //提取路径关键点
-    std::vector<Eigen::Vector3d> globla_path;
-    globla_path = move_base_point_set;
-    if (move_base_point_set.size() > 2) {
-        douglasPeucker(
-            move_base_point_set, 
-            0, 
-            move_base_point_set.size() - 1,
-            0.05,   // 可调阈值
-            simplified_points
-        );
-        // move_base_point_set = simplified_points;
-    }
-    visualizePaths(globla_path,move_base_point_set);
+    //visualizePaths(move_base_point_set,move_base_point_set);
 }
 
 nav_msgs::Odometry odom;
@@ -351,9 +351,8 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
 
   kino_path_finder_->reset();
   //kdtree搜索 扩展节点最近邻 添加启发式引导
-//添加JPS跳点作为前端引导来拯救局部最优解
 
-  int status = kino_path_finder_->search(simplified_points[0], start_vel, start_acc, end_pt, end_vel,global_path,jps_updated,true);
+  int status = kino_path_finder_->search(start_pt, start_vel, start_acc, end_pt, end_vel,global_path,jps_updated,true);
 
   if (status == KinodynamicAstar::NO_PATH) {
     cout << "[kino replan]: kinodynamic search fail!" << endl;
@@ -388,7 +387,7 @@ bool FastPlannerManager::kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vect
   NonUniformBspline::parameterizeToBspline(ts, point_set, start_end_derivatives, ctrl_pts);
 
   NonUniformBspline init(ctrl_pts, 3, ts);
-  visualizePaths(move_base_point_set,move_base_point_set);
+  //visualizePaths(move_base_point_set,move_base_point_set);
 
   // bspline trajectory optimization
 

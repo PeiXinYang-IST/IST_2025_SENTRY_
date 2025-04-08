@@ -12,6 +12,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/registration/ndt.h>
+
 using namespace std;
 clock_t start_time,end_time;
 double t_icp_man=0;

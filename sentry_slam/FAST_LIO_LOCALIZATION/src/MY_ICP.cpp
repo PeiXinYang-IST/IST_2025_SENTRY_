@@ -31,6 +31,7 @@ MY_ICP::MY_ICP() : nh_("~"), private_node_("~"),
     map_sub_ = nh_.subscribe("/map", 1, &MY_ICP::mappointCloudCallback, this);    
     odom_sub_ = nh_.subscribe("/odom", 1, &MY_ICP::odomCallback, this);
     fast_planner_pub_ = nh_.advertise<std_msgs::Bool>("fast_planner_start", 5);
+    initial_pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("initialpose", 1);
     // 启动发布线程
     publishThread_ = std::thread(&MY_ICP::publish_map_msg_thread, this);
 }
@@ -76,7 +77,7 @@ void MY_ICP::mappointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input
 {
         pcl::fromROSMsg(*input, *map_cloud_);   
 }
-// NEXTE_Sentry_Nav
+
 // IST_2025_sentry
 
 //这里进行加载先验地图
@@ -121,15 +122,14 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr MY_ICP::prior_map_deal(const pcl::PointCloud
         input_cloud->points[i].z < local_pointcloud_z_+radar_position.z() && 
         input_cloud->points[i].z > local_ground_pointcloud_z_+radar_position.z())
         {
-            // ROS_INFO("input_cloud : X:%f Y:%f Z:%f",input_cloud->points[i].x,input_cloud->points[i].y,input_cloud->points[i].z);
             cloud_filtered_local->points.push_back(input_cloud->points[i]);
         }
     }
 
-    pcl::toROSMsg(*cloud_filtered_local, local_pointcloud_msg);
-    local_pointcloud_msg.header.frame_id = "odom";
-    local_pointcloud_msg.header.stamp = ros::Time::now();
-    local_pointcloud_pub_.publish(local_pointcloud_msg);
+    // pcl::toROSMsg(*cloud_filtered_local, local_pointcloud_msg);
+    // local_pointcloud_msg.header.frame_id = "odom";
+    // local_pointcloud_msg.header.stamp = ros::Time::now();
+    // local_pointcloud_pub_.publish(local_pointcloud_msg);
     return cloud_filtered_local;
 }
 
@@ -281,7 +281,7 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
     static bool icp_publish,icp_clear_costmap;
     pcl::toROSMsg(*prior_map_, prior_map_msg);
     rotated_lidar_map_msg.header.frame_id = "odom";
-    pub_rotated_lidar_cloud.publish(rotated_lidar_map_msg); 
+    //pub_rotated_lidar_cloud.publish(rotated_lidar_map_msg); 
     PointCloud<PointXYZ> aligned;
 
     gicp.setInputSource(incoming_cloud_);
@@ -315,7 +315,7 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
         Eigen::Affine3f transform_3f = Eigen::Affine3f::Identity();
         transform_3f = gicp.getFinalTransformation(); // 获取变换矩阵
         
-        if(gicp.getFitnessScore()>icp_correct || icp_converged_times<10)
+        if(gicp.getFitnessScore()>icp_correct || icp_converged_times<20)
         icp_transform = transform;
 
         transformed=true;
@@ -350,6 +350,7 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
         std::cout << "tranDist:" << tranDist << " angleDist:" << angleDist << std::endl;
 #endif
         last_score = gicp.getFitnessScore();
+        ROS_WARN("ICP SCORE:%f",last_score);
         icp_converged_times++;
     } else {
         restart_msg.data=true;
@@ -385,6 +386,25 @@ void MY_ICP::publishTransform(const Eigen::Matrix4f& transform) {
     // 发布变换
     map_to_odom_pub.publish(transformStamped);
 
+    geometry_msgs::PoseStamped pose_msg;
+    pose_msg.header.stamp = ros::Time::now();
+    pose_msg.header.frame_id = "odom";  // 根据实际坐标系设置
+
+    // 从变换矩阵提取位置
+    pose_msg.pose.position.x = initial_pose(0, 3);
+    pose_msg.pose.position.y = initial_pose(1, 3);
+    pose_msg.pose.position.z = initial_pose(2, 3);
+
+    // 从旋转矩阵提取四元数
+    Eigen::Matrix3f rotation = initial_pose.block<3, 3>(0, 0);
+    Eigen::Quaternionf initial_quat(rotation);
+    pose_msg.pose.orientation.x = initial_quat.x();
+    pose_msg.pose.orientation.y = initial_quat.y();
+    pose_msg.pose.orientation.z = initial_quat.z();
+    pose_msg.pose.orientation.w = initial_quat.w();
+
+    initial_pose_pub.publish(pose_msg);
+    //ROS_WARN("ICP PUBLISH!!!");
 #ifdef ifdebug_ 
     std::cout << "Published transform" << std::endl;
     // 打印变换信息
@@ -397,7 +417,6 @@ void MY_ICP::publishTransform(const Eigen::Matrix4f& transform) {
     std::cout << "Rotation: x = " << transformStamped.transform.rotation.x 
     << ", y = " << transformStamped.transform.rotation.y << ", z = " << transformStamped.transform.rotation.z << ", w = " << transformStamped.transform.rotation.w << std::endl;
 #endif
-
 }
 
 void MY_ICP::findBestYawAngle() {
@@ -445,17 +464,21 @@ void MY_ICP::findBestYawAngle() {
         pcl::toROSMsg(rotated_lidar_cloud, rotated_lidar_map_msg);
         rotated_lidar_map_msg.header.frame_id = "odom";
         rotated_lidar_map_msg.header.stamp = ros::Time::now();
-        pub_rotated_lidar_cloud.publish(rotated_lidar_map_msg);
+        //pub_rotated_lidar_cloud.publish(rotated_lidar_map_msg);
     }
 
     std::cout << "Best yaw angle: " << best_yaw << " with score: " << best_score << std::endl;
 
     // 设置最佳角度和初始位姿
     best_yaw_angle_ = best_yaw;
+    // best_yaw_angle_ = 0; 
+    //best_yaw_angle_ = -M_PI;
     initial_pose.block<3, 3>(0, 0) = Eigen::AngleAxisf(best_yaw, Eigen::Vector3f::UnitZ()).toRotationMatrix();
-    initial_pose.block<3, 1>(0, 3) = Eigen::Vector3f(0, 0, 0); // 设置位置为 (0, 0, 0)
+    initial_pose.block<3, 1>(0, 3) = Eigen::Vector3f(0, 0, 0);
+    // initial_pose.block<3, 1>(0, 3) = Eigen::Vector3f(0, -7.5, 0); // 设置位置为 (0, 0, 0) //11 6
     icp_start = true;
 }
+
 /**
  * 对点云中障碍点进行剔除
  * cloud_map_msg为参考点云，cloud_msg为需要剔除障碍点的点云
@@ -469,10 +492,10 @@ void MY_ICP::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ>::Ptr &clou
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_z(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_icp_z(new pcl::PointCloud<pcl::PointXYZ>);
 
-    pcl::toROSMsg(*map_cloud_, prior_map_msg);
-    prior_map_msg.header.frame_id = "odom";
-    prior_map_msg.header.stamp = ros::Time::now();
-    pub_prior_map.publish(prior_map_msg);
+    // pcl::toROSMsg(*map_cloud_, prior_map_msg);
+    // prior_map_msg.header.frame_id = "odom";
+    // prior_map_msg.header.stamp = ros::Time::now();
+    //pub_prior_map.publish(prior_map_msg);
 
     pcl::PassThrough<pcl::PointXYZ> pass_z;
     std::vector<int> indices_to_remove;
@@ -523,19 +546,19 @@ for (size_t i = 0; i < cloud_msg->points.size(); ++i) {
         }
     }
 
-    pcl::toROSMsg(*cloud_msg, incoming_cloud_msg);
-    pub_incoming_cloud.publish(incoming_cloud_msg); //发布实时雷达点云
+    // pcl::toROSMsg(*cloud_msg, incoming_cloud_msg);
+    //pub_incoming_cloud.publish(incoming_cloud_msg); //发布实时雷达点云
 
-    cloud_removed->width = cloud_removed->points.size();
-    cloud_removed->height = 1;
-    cloud_removed->is_dense = false;  // contains nans
+    // cloud_removed->width = cloud_removed->points.size();
+    // cloud_removed->height = 1;
+    // cloud_removed->is_dense = false;  // contains nans
 
-    pcl::toROSMsg(*cloud_removed, cloud_removed_msg);
-    cloud_removed_msg.header.frame_id = "camera_init";
-    cloud_removed_msg.header.stamp = ros::Time::now();
+    // pcl::toROSMsg(*cloud_removed, cloud_removed_msg);
+    // cloud_removed_msg.header.frame_id = "camera_init";
+    // cloud_removed_msg.header.stamp = ros::Time::now();
     // Assuming you have a publisher defined as `removal_pointcloud_publisher_`, publish the cloud_removed
     // pcl::toROSMsg(*cloud_removed, cloud_removed_msg);
-    removal_pointcloud_publisher_.publish(cloud_removed_msg);
+    //removal_pointcloud_publisher_.publish(cloud_removed_msg);
 }
 
 //防止报错的，在未进行icp之前发布空变换

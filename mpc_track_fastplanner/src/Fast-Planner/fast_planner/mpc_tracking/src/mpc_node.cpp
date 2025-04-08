@@ -48,7 +48,7 @@ vector<Eigen::Vector3d> traj_cmd, traj_real;
 
 ros::Timer control_cmd_pub, path_pub;
 
-const int N = 50;
+const int N = 20;
 const double dt = 0.1;
 
 Eigen::Vector3d current_state;
@@ -95,6 +95,7 @@ void bsplineCallback(mpc_tracking::BsplineConstPtr msg) {
 
   receive_traj = true;
 }
+
 void replanCallback(std_msgs::Empty msg) {
   /* reset duration */
   const double time_out = 0.01;
@@ -117,6 +118,7 @@ void odomCallback(const nav_msgs::Odometry &msg) {
   odom = msg;
   cur_vel.x() = msg.twist.twist.linear.x;
   cur_vel.y() = msg.twist.twist.linear.y;
+
 //sim
     // current_state(0) = msg.pose.pose.position.x;
     // current_state(1) = msg.pose.pose.position.y;
@@ -124,8 +126,8 @@ void odomCallback(const nav_msgs::Odometry &msg) {
 //real
     global_path_.header.frame_id = "odom";
     global_path_.header.stamp = ros::Time::now();
-    current_state(0) = global_path_.poses[0].pose.position.x+0.11;
-    current_state(1) = global_path_.poses[0].pose.position.y;
+    current_state(0) = global_path_.poses[0].pose.position.x;
+    current_state(1) = global_path_.poses[0].pose.position.y+0.105;
     current_state(2) = 0.0;
 
     // current_state(2) = tf2::getYaw(msg.pose.pose.orientation);
@@ -139,8 +141,8 @@ void odomCallback(const nav_msgs::Odometry &msg) {
 
     // Eigen::Matrix3d rotationMatrix = quaternion.toRotationMatrix();
     // double yaw2 = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0));
-    cout << "x:" << current_state(0) << " " << "y:" << current_state(1) << endl;
-    cout << "yaw1:" << current_state(2) << endl;
+    // cout << "x:" << current_state(0) << " " << "y:" << current_state(1) << endl;
+    // cout << "yaw1:" << current_state(2) << endl;
     //cout << "yaw2:" << yaw2 << endl;
   }
 }
@@ -150,7 +152,8 @@ void publish_control_cmd(const ros::TimerEvent &e) {
 
     ros::Time time_now = ros::Time::now();
     double t_cur = (time_now - start_time).toSec();
-    
+    t_cur = std::max(t_cur, 0.0);  // 保证时间不小于0
+
     Eigen::Vector3d pos, vel, acc, pos_f;
     double yaw, yawdot;
 
@@ -209,10 +212,11 @@ void publish_control_cmd(const ros::TimerEvent &e) {
 
     auto result = mpc_ptr->solve(current_state, desired_state,dist,gradient,-1.0);
     geometry_msgs::Twist cmd;
-    cmd.linear.x = result[0];
-    cmd.linear.y = result[1];
+
+    cmd.linear.x = result[0]*0.4;
+    cmd.linear.y = result[1]*0.4;
     cmd.linear.z = result[2];
-          // 获取当前速度
+    // 获取当前速度
     double current_x = cur_vel.x();
     double current_y = cur_vel.y();
 
@@ -221,7 +225,7 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     double desired_y = cmd.linear.y;
 
     // 限制最大阶跃
-    const double max_step = 0.5;
+    const double max_step = 10.5;
 
     // 计算速度变化矢量
     double delta_x = desired_x - current_x;
@@ -245,16 +249,16 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     double dx = current_state(0) - global_path_.poses.back().pose.position.x;
     double dy = current_state(1) - global_path_.poses.back().pose.position.y;
 
+    // if(std::sqrt(dx * dx + dy * dy) < 0.7)
+    // cmd.linear.z = 1.0;
+
+    // else
+    // cmd.linear.z = 0.15;
+
     if(std::sqrt(dx * dx + dy * dy) < 0.7)
-    cmd.linear.z = 1.0;
-
-    else
-    cmd.linear.z = 0.15;
-
-    if(std::sqrt(dx * dx + dy * dy) < 0.5)
     {
-    cmd.angular.x = 0.3 * cmd.linear.x;   
-    cmd.angular.y = 0.3 * cmd.linear.y;   
+    cmd.linear.x = 0.2 * cmd.linear.x;   
+    cmd.linear.y = 0.2 * cmd.linear.y;   
     }
 
     // cmd.linear.x = (cmd.linear.x * cos(current_state(2)) + cmd.linear.y * sin(current_state(2)));
@@ -264,9 +268,10 @@ void publish_control_cmd(const ros::TimerEvent &e) {
     //cout << "u:" << result[0] << " " << "r:" << result[1] << endl;
 
     navigation.yaw.data=yaw_angle;
-	  navigation.x.data=cmd.linear.x*0.4;
-	  navigation.y.data=cmd.linear.y*0.4;
-	  navigation.z.data=cmd.linear.z;
+      navigation.x.data=cmd.linear.x;
+      navigation.y.data=cmd.linear.y;
+      navigation.z.data=cmd.linear.z;            
+
 	  navigation_pub.publish(navigation);
 
     predict_path.header.frame_id = "odom";
@@ -289,7 +294,6 @@ void yaw_callback(const std_msgs::Float32& msg)
 
 	yaw_angle = alpha*msg.data + (1-alpha)*last_yaw;
   last_yaw = yaw_angle;
-
 }
 
 void distCallback(std_msgs::Float64 msg)

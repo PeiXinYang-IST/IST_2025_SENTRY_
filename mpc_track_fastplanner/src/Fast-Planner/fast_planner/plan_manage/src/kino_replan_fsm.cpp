@@ -50,8 +50,20 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
 void KinoReplanFSM::waypointCallback(const nav_msgs::PathConstPtr& msg) {
   if (msg->poses[0].pose.position.z < -0.1) return;
 
+  // if(!get_path_)
+  //   return;
+  
+  // if(planner_manager_->edt_environment_->evaluateCoarseEDT(odom_pos_,-1.0)<0){
+  //   cout << "collision" << endl;
+  //   return;
+  // }
+
   cout << "Triggered!" << endl;
   trigger_ = true;
+
+  Eigen::Vector3d pt;
+  pt << msg->poses[0].pose.position.x, msg->poses[0].pose.position.y, msg->poses[0].pose.position.z;
+  double dist = planner_manager_->edt_environment_->evaluateCoarseEDT(pt, -1.0);
 
   if (target_type_ == TARGET_TYPE::MANUAL_TARGET) {
     end_pt_ << msg->poses[0].pose.position.x, msg->poses[0].pose.position.y, 0.0;
@@ -71,6 +83,7 @@ void KinoReplanFSM::waypointCallback(const nav_msgs::PathConstPtr& msg) {
     changeFSMExecState(GEN_NEW_TRAJ, "TRIG");
   else if (exec_state_ == EXEC_TRAJ)
     changeFSMExecState(REPLAN_TRAJ, "TRIG");
+
 }
 
 void KinoReplanFSM::map_to_odomcallback(const geometry_msgs::TransformStamped& msg)
@@ -80,8 +93,10 @@ void KinoReplanFSM::map_to_odomcallback(const geometry_msgs::TransformStamped& m
   map_to_odom_vector.z() = msg.transform.translation.z;
 }
 
+double global_path_count_;
 void KinoReplanFSM::pathCallback(const nav_msgs::Path::ConstPtr& msg) {
   global_path_ = *msg;
+  global_path_count_++;
   get_path_ = true;
 }
 
@@ -92,31 +107,35 @@ void KinoReplanFSM::start_task(const std_msgs::Bool::ConstPtr& msg){
 
 //设置目标点
 void KinoReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr& msg) {
+static double global_path_count_check;
+// if(get_path_ && global_path_count_check!=global_path_count_){
 if(get_path_){
+  global_path_count_check=global_path_count_;
   geometry_msgs::PoseStamped robot_pose_;
   global_path_.header.frame_id = "odom";
   global_path_.header.stamp = ros::Time::now();
   odom_pos_(0) = global_path_.poses[0].pose.position.x;
-  odom_pos_(1) = global_path_.poses[0].pose.position.y;
+  odom_pos_(1) = global_path_.poses[0].pose.position.y+0.105;
   odom_pos_(2) = global_path_.poses[0].pose.position.z;
 
   odom_vel_(0) = msg->twist.twist.linear.x;
   odom_vel_(1) = msg->twist.twist.linear.y;
   odom_vel_(2) = msg->twist.twist.linear.z;
-
+  // ROS_WARN("odom_vel_: %f, %f, %f", odom_vel_(0), odom_vel_(1), odom_vel_(2));
   odom_orient_.w() = msg->pose.pose.orientation.w;
   odom_orient_.x() = msg->pose.pose.orientation.x;
   odom_orient_.y() = msg->pose.pose.orientation.y;
   odom_orient_.z() = msg->pose.pose.orientation.z;
 
   robot_pose_.pose = global_path_.poses[0].pose;
+
+  
   // robot_pose_.pose.position.x = odom_pos_(0);
   // robot_pose_.pose.position.y = odom_pos_(1);
   // robot_pose_.pose.position.z = odom_pos_(2);
   robot_pose_.header.frame_id = "odom";
   // robot_pose_.pose.orientation = tf2::toMsg(new_quat);
   // robot_pose_pub_.publish(robot_pose_);
-  
   have_odom_ = true;
 }
 }
@@ -169,6 +188,7 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
     case GEN_NEW_TRAJ: {
       start_pt_  = odom_pos_;
       start_vel_ = odom_vel_;
+      // ROS_WARN("start_vel_: %f, %f, %f", start_vel_(0), start_vel_(1), start_vel_(2));
       start_acc_.setZero();
       
       Eigen::Vector3d rot_x = odom_orient_.toRotationMatrix().block(0, 0, 3, 1);
@@ -203,6 +223,24 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
 
       Eigen::Vector3d pos = info->position_traj_.evaluateDeBoorT(t_cur);
 
+      // 检查odom与轨迹当前位置的距离
+      double dist_to_odom = (pos - odom_pos_).norm();
+
+      // double current_speed = odom_vel_.norm();
+      // double dynamic_thresh = std::max(0.5, 0.2 * current_speed); // 基础阈值0.15m，按速度比例增加
+      // if (dist_to_odom > dynamic_thresh) {
+      //   changeFSMExecState(GEN_NEW_TRAJ, "DIST_CONDITION");
+      //   break;
+      // }
+
+
+      if (dist_to_odom > 0.2) {
+        // ROS_WARN("dist_to_odom: %f", dist_to_odom);
+        // ROS_WARN("Odom distance exceeds threshold, triggering replan.");
+        changeFSMExecState(REPLAN_TRAJ, "DIST_CONDITION");
+        break;
+      }
+
       /* && (end_pt_ - pos).norm() < 0.5 */
       if (t_cur > info->duration_ - 1e-2) {
               // if ((end_pt_ - pos).norm() < 0.1) {
@@ -211,7 +249,6 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
         changeFSMExecState(WAIT_TARGET, "FSM");
         
         return;
-
       } else if ((end_pt_ - pos).norm() < no_replan_thresh_) {
         // cout << "near end" << endl;
         return;
@@ -227,12 +264,29 @@ void KinoReplanFSM::execFSMCallback(const ros::TimerEvent& e) {
     }
 
     case REPLAN_TRAJ: {
+ros::Time replan_start_time = ros::Time::now();
+double replan_timeout = 1.0; // 超时时间1秒
+
+// 在状态处理中检查超时
+if ((ros::Time::now() - replan_start_time).toSec() > replan_timeout) {
+  changeFSMExecState(GEN_NEW_TRAJ, "REPLAN_TIMEOUT");
+}
+
+// 在 REPLAN_TRAJ 状态或全局变量中定义
+static ros::Time last_replan_time = ros::Time(0);
+double replan_cooldown = 0.25; // 冷却时间 0.5秒
+
+if ((ros::Time::now() - last_replan_time).toSec() < replan_cooldown) {
+  return; // 未过冷却时间，跳过重规划
+}
+last_replan_time = ros::Time::now(); // 更新最后触发时间
+
       LocalTrajData* info     = &planner_manager_->local_data_;
       ros::Time      time_now = ros::Time::now();
       double         t_cur    = (time_now - info->start_time_).toSec();
 
-      start_pt_  = info->position_traj_.evaluateDeBoorT(t_cur);
-      start_vel_ = info->velocity_traj_.evaluateDeBoorT(t_cur);
+      start_pt_  = odom_pos_;
+      start_vel_ = odom_vel_;
       start_acc_ = info->acceleration_traj_.evaluateDeBoorT(t_cur);
 
       // start_yaw_(0) = info->yaw_traj_.evaluateDeBoorT(t_cur)[0];
@@ -268,14 +322,14 @@ void KinoReplanFSM::checkCollisionCallback(const ros::TimerEvent& e) {
         edt_env->evaluateCoarseEDT(end_pt_, /* time to program start + */ info->duration_) :
         edt_env->evaluateCoarseEDT(end_pt_, -1.0);
 
-    if (dist <= 0.2) {
+    if (dist <= 0.1) {
       /* try to find a max distance goal around */
       bool            new_goal = false;
-      const double    dr = 0.15, dtheta = 15, dz = 0.001;
+      const double    dr = 0.05, dtheta = 15, dz = 0.001;
       double          new_x, new_y, new_z, max_dist = -1.0;
       Eigen::Vector3d goal;
       
-      for (double r = dr; r <= 5 * dr + 1e-3; r += dr) {
+      for (double r = dr; r <= 20 * dr + 1e-3; r += dr) {
         for (double theta = -90; theta <= 270; theta += dtheta) {
           for (double nz = 1 * dz; nz >= -1 * dz; nz -= dz) {
 
@@ -299,7 +353,7 @@ void KinoReplanFSM::checkCollisionCallback(const ros::TimerEvent& e) {
         }
       }
 
-      if (max_dist > 0.2) {
+      if (max_dist > 0.1) {
         cout << "change goal, replan." << endl;
         end_pt_      = goal;
         have_target_ = true;

@@ -1,15 +1,16 @@
 <launch>    
-    <!-- <node pkg="sentry_nav" type="pid_follow" name="pid_follow" output="screen" respawn="true" >
-    <param name = "max_speed" value = "0.8" />
-    <param name = "pid_p" value = "1.5" />
+    <node pkg="sentry_nav" type="pid_follow" name="pid_follow" output="log" respawn="true" >
+    <param name = "max_speed" value = "1.0" />
+    <param name = "pid_p" value = "2.0" />
     <param name = "pid_i" value = "0.1" />
     <param name = "pid_d" value = "1.0" />
     <param name = "i_max_" value = "0.10" />
     <param name = "set_yaw_speed" value = "0.7" />
-    <param name = "goal_dist_tolerance" value = "0.40" />
-    <param name = "far_goal_dist_tolerance" value = "0.7"/>
+    <param name = "goal_dist_tolerance" value = "0.50" />
+    <param name = "far_goal_dist_tolerance" value = "0.65"/>
     <param name = "far_far_goal_dist_tolerance" value = "1.5"/>
     <param name = "alpha" value = "0.2"/>
     <param name = "set_max_yaw_speed_" value = "1.0"/>
-    </node> -->
+    </node>
+
 </launch>

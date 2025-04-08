@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 using CppAD::AD;
 
-const int N = 30;
+const int N = 20;
 const double dt = 0.1;
 
 int x_start = 0;
@@ -33,13 +33,13 @@ public:
         //cost
         fg[0] = 0;
 
-        //weights
-        const int x_weight = 10;
-        const int y_weight = 10;
+        //weights·
+        const int x_weight = 15;
+        const int y_weight = 15;
         const int psi_weight =0;
         const int u_weight = 1;
         const int v_weight = 1;
-
+//
         for (int i = 0; i < N; ++i) {
             AD<double> x_des = desired_state_(i, 0);
             AD<double> y_des = desired_state_(i, 1);
@@ -177,6 +177,6 @@ constraints_upperbound[psi_start] = psi;
         solved.push_back(solution.x[x_start + i]);
         solved.push_back(solution.x[y_start + i]);
     }
-    cout << "u:" << solution.x[u_start] << " " << "v:" << solution.x[v_start] << endl;
+    // cout << "u:" << solution.x[u_start] << " " << "v:" << solution.x[v_start] << endl;
     return solved;
 }

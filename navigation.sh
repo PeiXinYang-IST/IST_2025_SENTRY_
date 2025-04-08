@@ -43,14 +43,18 @@ restart_nodes() {
     roslaunch sentry_nav sentry_movebase.launch &
     PID_NAV=$!
     echo "NAV relaunched with PID: $PID_NAV"
- 
+    #  sleep 2
+    #  roslaunch sentry_nav pid.launch &
+    # PID_PID=$!
+    # echo "NAV relaunched with PID: $PID_PID"
+
     # sleep 1
-    roslaunch plan_manage real.launch &
-    PID_FAST_PLANNER=$!
-    echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
+    # roslaunch plan_manage real.launch &
+    # PID_FAST_PLANNER=$!
+    # echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
     # 启动Serial节点
-    # roslaunch sentry_serial serial.launch &
+    # roslaunch sentry_serial goal_send.launch &
     # PID_SERIAL=$!
     # echo "Serial relaunched with PID: $PID_SERIAL"
 }
@@ -64,12 +68,18 @@ kill_processes() {
     if [ ! -z "$PID_NAV" ]; then
         kill -SIGINT $PID_NAV
     fi
-    if [ ! -z "$PID_FAST_PLANNER" ]; then
-        kill -SIGINT $PID_FAST_PLANNER
+    # if [ ! -z "$PID_FAST_PLANNER" ]; then
+    #     kill -SIGINT $PID_FAST_PLANNER
+    # fi
+    # if [ ! -z "$PID_PID" ]; then
+    #     kill -SIGINT $PID_PID
+    # fi
+    if [ ! -z "$PID_GOAL" ]; then
+        kill -SIGINT $PID_GOAL
     fi
-    if [ ! -z "$PID_SERIAL" ]; then
-        kill -SIGINT $PID_SERIAL
-    fi
+    # if [ ! -z "$PID_SERIAL" ]; then
+    #     kill -SIGINT $PID_SERIAL
+    # fi
     wait # 确保所有子进程都结束
 }
 

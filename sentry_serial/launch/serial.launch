@@ -1,5 +1,5 @@
 <launch>
-    <param name="cmd_vel_topic" type="string" value="/smooth_cmd_vel"/>
+    <!-- <param name="cmd_vel_topic" type="string" value="/smooth_cmd_vel"/> -->
     <node pkg="sentry_serial" type="serial_node" name="serial_node" output="screen" respawn="true"/>
 
 </launch>

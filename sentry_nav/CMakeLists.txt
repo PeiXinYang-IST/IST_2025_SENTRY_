@@ -163,16 +163,12 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/sentry_nav_node.cpp)
-add_executable(trans_tf_2d src/Trans_TF_2d.cpp)
-add_executable(trans_tf_2d_odom src/Trans_TF_2d_odom.cpp)
-add_executable(trans_odom_2d src/Trans_odom_2d.cpp)
 add_executable(pid_follow src/pid_follow.cpp)
-add_executable(APF_hide_obstacle src/APF_hide_obstacle.cpp)
 add_executable(icp_costmap_clear src/icp_costmap_clear.cpp)
-add_executable(BSP_line src/BSP_line.cpp)
 add_executable(global_to_local src/global_to_local.cpp)
 add_executable(graph src/graph.cpp)
 add_executable(JPS src/JPS.cpp)
+add_executable(goal src/goal.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -188,19 +184,11 @@ add_executable(JPS src/JPS.cpp)
 #   ${catkin_LIBRARIES}
 # )
 
-target_link_libraries(trans_tf_2d
-  ${catkin_LIBRARIES}
-)
+
 target_link_libraries(JPS
   ${catkin_LIBRARIES}
 )
 target_link_libraries(graph
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(trans_tf_2d_odom
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(trans_odom_2d
   ${catkin_LIBRARIES}
 )
 target_link_libraries(pid_follow
@@ -209,14 +197,11 @@ target_link_libraries(pid_follow
 target_link_libraries(icp_costmap_clear
   ${catkin_LIBRARIES}
 )
-target_link_libraries(APF_hide_obstacle
-${catkin_LIBRARIES}
-)
-target_link_libraries(BSP_line
-${catkin_LIBRARIES}
-)
 target_link_libraries(global_to_local
 ${catkin_LIBRARIES}
+)
+target_link_libraries(goal
+  ${catkin_LIBRARIES}
 )
 find_package(HDF5 REQUIRED)
 include_directories(${HDF5_INCLUDE_DIRS})

@@ -17,8 +17,10 @@
 // 全局变量
 ros::Publisher pub;
 ros::Publisher preproessed_pub;
+ros::Publisher xyz_proessed_pub;
 ros::Subscriber sub;
 ros::Subscriber odom_sub;
+
 ros::Time last_time;
 ros::Time current_time;
 int count = 0; // 计数器
@@ -155,6 +157,12 @@ for (size_t i = 0; i < cloud->points.size(); ++i) {
     }
 }
 
+    sensor_msgs::PointCloud2 xyz_processed_cloud_msg;
+    pcl::toROSMsg(*cloud_filtered_cylinder_removed_z_2, xyz_processed_cloud_msg);
+    xyz_processed_cloud_msg.header.frame_id = "camera_init";
+    xyz_processed_cloud_msg.header.stamp = ros::Time::now();
+    xyz_proessed_pub.publish(xyz_processed_cloud_msg);
+
     // 创建StatisticalOutlierRemoval滤波器对象
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(cloud_filtered_cylinder_removed_z_2);
@@ -199,6 +207,7 @@ int main(int argc, char** argv) {
     odom_sub = nh.subscribe("odom", 1, odomCallback);
     // 创建Publisher来发布处理后的点云
     pub = nh.advertise<sensor_msgs::PointCloud2>("processed_cloud", 1);
+    xyz_proessed_pub = nh.advertise<sensor_msgs::PointCloud2>("xyz_processed_cloud", 1);
     preproessed_pub = nh.advertise<sensor_msgs::PointCloud2>("preprocessed_cloud", 1);
     last_second_time = ros::Time::now(); // 初始化上一次计算频率的时间
 

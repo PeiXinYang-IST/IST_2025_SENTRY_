@@ -1,26 +1,26 @@
 <launch>
-    <node pkg="move_base" type="move_base" respawn="false" name="move_base1" output="screen" clear_params="true" args="/map:=prior_map /odom:=odom">
-        <param name="planner_frequency" value="10.0" />
+    <node pkg="move_base" type="move_base" respawn="true" name="move_base1" output="log" clear_params="true" args="/map:=prior_map /odom:=odom" >
+        <param name="planner_frequency" value="15.0" />
         <param name="planner_patience" value="10.0" />
-        <param name="use_dijkstra" value="true" />
+        <param name="use_dijkstra" value="false" />
         <param name="cost_factor" value="5.0" />
         <rosparam file="$(find sentry_nav)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
         <rosparam file="$(find sentry_nav)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
         <rosparam file="$(find sentry_nav)/param/local_costmap_params.yaml" command="load" />
         <rosparam file="$(find sentry_nav)/param/global_costmap_params.yaml" command="load" />
 </node>
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
     <!-- icp重定位初始化后清除原位置全局代价地图 -->
     <node pkg="sentry_nav" type="icp_costmap_clear" name="icp_costmap_clear" /> 
 
     <!-- <node pkg="sentry_nav" type="graph" name="graph" />  -->
 
-    <node pkg="sentry_nav" type="JPS" name="JPS" /> 
+    <!-- <node pkg="sentry_nav" type="JPS" name="JPS" />  -->
 
-    <include file="$(find sentry_nav)/launch/pid.launch">
-	</include>
+    <!-- <include file="$(find sentry_nav)/launch/pid.launch">
+	</include> -->
 
-    <!-- <node pkg="sentry_nav" type="global_to_local" name="global_to_local"/> -->
+    <node pkg="sentry_nav" type="global_to_local" name="global_to_local"/>
 
     <!-- <include file="$(find sentry_decision)/launch/pursuit.launch">
 	</include> -->
@@ -29,5 +29,5 @@
     <node pkg="sentry_nav" type="trans_odom_2d" name="trans_odom_2d" /> -->
 	<!-- <include file="$(find velocity_smoother_ema)/launch/velocity_smoother_ema.launch"> -->
 	<!-- </include> -->
-    
+
 </launch>

@@ -581,12 +581,26 @@ void set_posestamp(T & out)
     
 }
 
+template<typename T>
+void set_twiststamp(T & out)
+{
+    // 这三个 xyz的速度没问题
+    out.twist.linear.x = state_point.vel(0);
+    out.twist.linear.y = state_point.vel(1);
+    out.twist.linear.z = state_point.vel(2);
+    // 没找到 angular 数据储存在哪里
+    // out.twist.angular.x = ;
+    // out.twist.angular.y = ;
+    // out.twist.angular.z = ;
+}
+
 void publish_odometry(const ros::Publisher & pubOdomAftMapped)
 {
     odomAftMapped.header.frame_id = "camera_init";
     odomAftMapped.child_frame_id = "body";
     odomAftMapped.header.stamp = ros::Time().fromSec(lidar_end_time);// ros::Time().fromSec(lidar_end_time);
     set_posestamp(odomAftMapped.pose);
+    set_twiststamp(odomAftMapped.twist);
     pubOdomAftMapped.publish(odomAftMapped);
     auto P = kf.get_P();
     for (int i = 0; i < 6; i ++)

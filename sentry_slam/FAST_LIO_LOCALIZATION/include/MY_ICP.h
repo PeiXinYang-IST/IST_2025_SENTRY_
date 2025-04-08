@@ -148,6 +148,7 @@ private:
     ros::Publisher move_base_start_pub_;
     ros::Publisher local_pointcloud_pub_;
     ros::Publisher fast_planner_pub_;
+    ros::Publisher initial_pose_pub;
     ros::Subscriber pointcloud_sub;
     ros::Subscriber map_sub_;
     ros::Subscriber odom_sub_;

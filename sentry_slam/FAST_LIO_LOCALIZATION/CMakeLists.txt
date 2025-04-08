@@ -59,6 +59,8 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   pcl_conversions
   fast_lio
+  costmap_2d
+  nav_core
 )
 
 find_package(Eigen3 REQUIRED)
