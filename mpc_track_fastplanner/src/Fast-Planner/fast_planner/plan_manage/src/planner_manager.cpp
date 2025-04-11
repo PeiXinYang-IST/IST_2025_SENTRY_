@@ -38,7 +38,9 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &FastPlannerManager::pathCallback, this);
   JPS_sub = nh.subscribe("/jps_path", 10, &FastPlannerManager::JPS_pathCallback, this);
   nav_pose_sub = nh.subscribe("/nav_pose", 1, &FastPlannerManager::nav_pose_Callback, this);
-
+  mpc_path_update_pub_ = nh.advertise<std_msgs::Empty>("/mpc_path_update", 1);
+  mpc_path_sub = nh.subscribe("MPC_TRACK_PATH", 10, &FastPlannerManager::mpcpathCallback, this);
+  idx_pub_ = nh.advertise<std_msgs::Float64>("/idx", 10);
   local_data_.traj_id_ = 0;
   sdf_map_.reset(new SDFMap);
   ROS_WARN("init path"); 
@@ -86,6 +88,10 @@ void FastPlannerManager::JPS_pathCallback(const nav_msgs::Path::ConstPtr&msg){
     last_nav_pose = current_nav_pose;  
     jps_updated = true;
   
+}
+void FastPlannerManager::mpcpathCallback(const nav_msgs::Path::ConstPtr& msg) {
+  mpc_path_ = *msg;
+  mpc_path_updated = true;
 }
 
 void FastPlannerManager::visualizePaths(const std::vector<Eigen::Vector3d>& global_path,const std::vector<Eigen::Vector3d>& points) {
@@ -209,58 +215,112 @@ void douglasPeucker(const std::vector<Eigen::Vector3d>& points,
 
 std::vector<Eigen::Vector3d> simplified_points;
 void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
-    move_base_point_set.clear();
-    simplified_points.clear();
+//mpc路径不为空
+  if(mpc_path_updated)
+  {
+  pcl::KdTreeFLANN<pcl::PointXY> kdtree;
+  pcl::PointCloud<pcl::PointXY>::Ptr path_points(new pcl::PointCloud<pcl::PointXY>);
 
-    //提取路径稀疏点
-    for (size_t i = 0; i < msg.poses.size(); i+=1) {
-        geometry_msgs::PoseStamped pose = msg.poses[i];
-        Eigen::Vector3d point(
-            pose.pose.position.x, 
-            pose.pose.position.y,
-            pose.pose.position.z
-        );
-        move_base_point_set.push_back(point);
+  // 填充路径点
+  for (const auto& pose : mpc_path_.poses) {
+    pcl::PointXY pt;
+    pt.x = pose.pose.position.x;
+    pt.y = pose.pose.position.y;
+    path_points->push_back(pt);
+  }
+  kdtree.setInputCloud(path_points);
+  
+
+pcl::PointXY query_pt;
+query_pt.x = odom_pos[0];
+query_pt.y = odom_pos[1];
+
+int nearest_idx;
+float nearest_dist;
+std::vector<int> indices(1);
+std::vector<float> distances(1);
+
+if (kdtree.nearestKSearch(query_pt, 1, indices, distances) > 0) {
+    nearest_idx = indices[0];
+    nearest_dist = distances[0];
+}
+  std_msgs::Float64 idx_msg;
+  idx_msg.data = nearest_idx;
+  idx_pub_.publish(idx_msg);
+  for(size_t i = nearest_idx;i<mpc_path_.poses.size();i+=5)
+  {
+    geometry_msgs::PoseStamped pose = mpc_path_.poses[i];
+    Eigen::Vector3d point(
+        pose.pose.position.x, 
+        pose.pose.position.y,
+        pose.pose.position.z
+    );
+    double dist = edt_environment_->evaluateCoarseEDT(point, -1.0);
+    if(dist < 0.1)
+    {
+      std_msgs::Empty mpc_path_update_msg;
+      mpc_path_update_pub_.publish(mpc_path_update_msg);
     }
+  }
+  }
 
-    //提取路径关键点
-    std::vector<Eigen::Vector3d> globla_path;
-    globla_path = move_base_point_set;
-    // if (move_base_point_set.size() > 2) {
-    //     douglasPeucker(
-    //         move_base_point_set, 
-    //         0, 
-    //         move_base_point_set.size() - 1,
-    //         0.1,   // 可调阈值
-    //         simplified_points
+  //////////////////////////////////////////////////////////////////
+    // move_base_point_set.clear();
+    // simplified_points.clear();
+
+    // //提取路径稀疏点
+    // for (size_t i = 0; i < msg.poses.size(); i+=1) {
+    //     geometry_msgs::PoseStamped pose = msg.poses[i];
+    //     Eigen::Vector3d point(
+    //         pose.pose.position.x, 
+    //         pose.pose.position.y,
+    //         pose.pose.position.z
     //     );
-    //     //move_base_point_set = simplified_points;
+    //     double dist = edt_environment_->evaluateCoarseEDT(point, -1.0);
+
+    //     move_base_point_set.push_back(point);
     // }
+
     
-      global_path.poses.clear();  // 清空路径点集合
+
+    // //提取路径关键点
+    // std::vector<Eigen::Vector3d> globla_path;
+    // globla_path = move_base_point_set;
+    // // if (move_base_point_set.size() > 2) {
+    // //     douglasPeucker(
+    // //         move_base_point_set, 
+    // //         0, 
+    // //         move_base_point_set.size() - 1,
+    // //         0.1,   // 可调阈值
+    // //         simplified_points
+    // //     );
+    // //     //move_base_point_set = simplified_points;
+    // // }
     
-    // 遍历所有路径点
-    for (const auto& point : move_base_point_set) {
-        geometry_msgs::PoseStamped pose_stamped;
+    //   global_path.poses.clear();  // 清空路径点集合
+    
+    // // 遍历所有路径点
+    // for (const auto& point : move_base_point_set) {
+    //     geometry_msgs::PoseStamped pose_stamped;
         
-        // 填充位置
-        pose_stamped.pose.position.x = point.x();
-        pose_stamped.pose.position.y = point.y();
-        pose_stamped.pose.position.z = point.z();  // 2D路径可设为0
+    //     // 填充位置
+    //     pose_stamped.pose.position.x = point.x();
+    //     pose_stamped.pose.position.y = point.y();
+    //     pose_stamped.pose.position.z = point.z();  // 2D路径可设为0
         
-        // 设置方向（默认朝向下一个点）
-        pose_stamped.pose.orientation.w = 1.0;  // 无旋转
+    //     // 设置方向（默认朝向下一个点）
+    //     pose_stamped.pose.orientation.w = 1.0;  // 无旋转
         
-        // 设置时间戳和坐标系
-        pose_stamped.header = global_path.header;
+    //     // 设置时间戳和坐标系
+    //     pose_stamped.header = global_path.header;
         
-        global_path.poses.push_back(pose_stamped);
-    }
+    //     global_path.poses.push_back(pose_stamped);
+    // }
     //visualizePaths(move_base_point_set,move_base_point_set);
 }
 
 nav_msgs::Odometry odom;
-Eigen::Vector3d odom_pos;
+
 void FastPlannerManager::odomCallback(const nav_msgs::Odometry &msg) {
   odom_pos[0] = msg.pose.pose.position.x;
   odom_pos[1] = msg.pose.pose.position.y;

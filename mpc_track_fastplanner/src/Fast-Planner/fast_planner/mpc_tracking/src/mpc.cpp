@@ -33,7 +33,7 @@ public:
         //cost
         fg[0] = 0;
 
-        //weights·
+        //weights
         const int x_weight = 15;
         const int y_weight = 15;
         const int psi_weight =0;

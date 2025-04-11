@@ -14,10 +14,12 @@
 #include <std_msgs/Float64.h>
 #include <sentry_serial/navigation.h>
 #include <geometry_msgs/Vector3.h>
+#include "cubic_spline/cubic_spline_ros.h"
+#include <pcl/kdtree/kdtree_flann.h>
 
 ros::Publisher navigation_pub;
 sentry_serial::navigation navigation;
-
+ros::Publisher MPC_TRACK_PATH_pub_;
 // #define BACKWARD_HAS_DW 1
 // #include "backward.hpp"
 // namespace backward{
@@ -40,7 +42,6 @@ vector<NonUniformBspline> traj;
 double traj_duration;
 Eigen::Vector2d gradient(grab.x, grab.y);
 ros::Time start_time;
-
 double last_yaw;
 double time_forward;
 
@@ -104,9 +105,26 @@ void replanCallback(std_msgs::Empty msg) {
   traj_duration = min(t_stop, traj_duration);
 }
 
+nav_msgs::Path mpc_path_;
+
+void path_update_callback(std_msgs::Empty msg) {
+  mpc_path_ = global_path_;
+}
+
 void pathCallback(const nav_msgs::Path::ConstPtr& msg) {
+  nav_msgs::Path smoothed_path;
   global_path_ = *msg;
+  GenTraj(global_path_, smoothed_path);
+  global_path_ = smoothed_path;
   get_path_ = true;
+
+  // Check if mpc_path_ is empty
+  if (mpc_path_.poses.empty()) {
+    mpc_path_ = global_path_;
+  }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  mpc_path_ = global_path_;
 }
 
 void start_task(const std_msgs::Bool::ConstPtr& msg){
@@ -148,6 +166,8 @@ void odomCallback(const nav_msgs::Odometry &msg) {
 }
 
 void publish_control_cmd(const ros::TimerEvent &e) {
+    if(!get_path_) return;
+    MPC_TRACK_PATH_pub_.publish(mpc_path_);
     if (!receive_traj) return;
 
     ros::Time time_now = ros::Time::now();
@@ -159,56 +179,105 @@ void publish_control_cmd(const ros::TimerEvent &e) {
 
     Eigen::MatrixXd desired_state = Eigen::MatrixXd::Zero(N, 3);
 
-    if (t_cur + (N-1) * dt <= traj_duration && t_cur > 0) {
-      for (int i = 0; i < N; ++i) {
-        pos = traj[0].evaluateDeBoorT(t_cur + i * dt);
-        vel = traj[1].evaluateDeBoorT(t_cur + i * dt);
-        acc = traj[2].evaluateDeBoorT(t_cur + i * dt);
-        yaw = traj[3].evaluateDeBoorT(t_cur + i * dt)[0];
-        yawdot = traj[4].evaluateDeBoorT(t_cur + i * dt)[0];
+  //   if (t_cur + (N-1) * dt <= traj_duration && t_cur > 0) {
+  //     for (int i = 0; i < N; ++i) {
+  //       pos = traj[0].evaluateDeBoorT(t_cur + i * dt);
+  //       vel = traj[1].evaluateDeBoorT(t_cur + i * dt);
+  //       acc = traj[2].evaluateDeBoorT(t_cur + i * dt);
+  //       yaw = traj[3].evaluateDeBoorT(t_cur + i * dt)[0];
+  //       yawdot = traj[4].evaluateDeBoorT(t_cur + i * dt)[0];
 
-        desired_state(i, 0) = pos[0];
-        desired_state(i, 1) = pos[1];
-        desired_state(i, 2) = yaw;
-      }
-    } else if (t_cur + (N-1) * dt > traj_duration && t_cur < traj_duration) {
-        int more_num = (t_cur + (N-1) * dt - traj_duration) / dt;
-        for (int i = 0; i < N - more_num; ++i) {
-          pos = traj[0].evaluateDeBoorT(t_cur + i * dt);
-          vel = traj[1].evaluateDeBoorT(t_cur + i * dt);
-          acc = traj[2].evaluateDeBoorT(t_cur + i * dt);
-          yaw = traj[3].evaluateDeBoorT(t_cur + i * dt)[0];
-          yawdot = traj[4].evaluateDeBoorT(t_cur + i * dt)[0];
+  //       desired_state(i, 0) = pos[0];
+  //       desired_state(i, 1) = pos[1];
+  //       desired_state(i, 2) = yaw;
+  //     }
+  //   } else if (t_cur + (N-1) * dt > traj_duration && t_cur < traj_duration) {
+  //       int more_num = (t_cur + (N-1) * dt - traj_duration) / dt;
+  //       for (int i = 0; i < N - more_num; ++i) {
+  //         pos = traj[0].evaluateDeBoorT(t_cur + i * dt);
+  //         vel = traj[1].evaluateDeBoorT(t_cur + i * dt);
+  //         acc = traj[2].evaluateDeBoorT(t_cur + i * dt);
+  //         yaw = traj[3].evaluateDeBoorT(t_cur + i * dt)[0];
+  //         yawdot = traj[4].evaluateDeBoorT(t_cur + i * dt)[0];
 
-          desired_state(i, 0) = pos(0);
-          desired_state(i, 1) = pos(1);
-          desired_state(i, 2) = yaw;          
-        }
-        for (int i = N - more_num; i < N; ++i) {
-          pos = traj[0].evaluateDeBoorT(traj_duration);
-          vel.setZero();
-          acc.setZero();
-          yaw = traj[3].evaluateDeBoorT(traj_duration)[0];
-          yawdot = traj[4].evaluateDeBoorT(traj_duration)[0];
+  //         desired_state(i, 0) = pos(0);
+  //         desired_state(i, 1) = pos(1);
+  //         desired_state(i, 2) = yaw;          
+  //       }
+  //       for (int i = N - more_num; i < N; ++i) {
+  //         pos = traj[0].evaluateDeBoorT(traj_duration);
+  //         vel.setZero();
+  //         acc.setZero();
+  //         yaw = traj[3].evaluateDeBoorT(traj_duration)[0];
+  //         yawdot = traj[4].evaluateDeBoorT(traj_duration)[0];
 
-          desired_state(i, 0) = pos(0);
-          desired_state(i, 1) = pos(1);
-          desired_state(i, 2) = yaw;
-        }
-    } else if (t_cur >= traj_duration)  {
-      pos = traj[0].evaluateDeBoorT(traj_duration);
-      vel.setZero();
-      acc.setZero();
-      yaw = traj[3].evaluateDeBoorT(traj_duration)[0];
-      yawdot = traj[4].evaluateDeBoorT(traj_duration)[0];
-      for (int i = 0; i < N; ++i) {
-          desired_state(i, 0) = pos(0);
-          desired_state(i, 1) = pos(1);
-          desired_state(i, 2) = yaw;
-      }
-    } else {
-      cout << "[Traj server]: invalid time." << endl;
+  //         desired_state(i, 0) = pos(0);
+  //         desired_state(i, 1) = pos(1);
+  //         desired_state(i, 2) = yaw;
+  //       }
+  //   } else if (t_cur >= traj_duration)  {
+  //     pos = traj[0].evaluateDeBoorT(traj_duration);
+  //     vel.setZero();
+  //     acc.setZero();
+  //     yaw = traj[3].evaluateDeBoorT(traj_duration)[0];
+  //     yawdot = traj[4].evaluateDeBoorT(traj_duration)[0];
+  //     for (int i = 0; i < N; ++i) {
+  //         desired_state(i, 0) = pos(0);
+  //         desired_state(i, 1) = pos(1);
+  //         desired_state(i, 2) = yaw;
+  //     }
+  //   } else {
+  //     cout << "[Traj server]: invalid time." << endl;
+  // }
+
+  pcl::KdTreeFLANN<pcl::PointXY> kdtree;
+  pcl::PointCloud<pcl::PointXY>::Ptr path_points(new pcl::PointCloud<pcl::PointXY>);
+
+  // 填充路径点
+  for (const auto& pose : mpc_path_.poses) {
+    pcl::PointXY pt;
+    pt.x = pose.pose.position.x;
+    pt.y = pose.pose.position.y;
+    path_points->push_back(pt);
   }
+  kdtree.setInputCloud(path_points);
+  
+
+pcl::PointXY query_pt;
+query_pt.x = current_state(0);
+query_pt.y = current_state(1);
+
+int nearest_idx;
+float nearest_dist;
+std::vector<int> indices(1);
+std::vector<float> distances(1);
+
+if (kdtree.nearestKSearch(query_pt, 1, indices, distances) > 0) {
+    nearest_idx = indices[0];
+    nearest_dist = distances[0];
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+nearest_idx = 0;
+
+if (global_path_.poses.size() > N + nearest_idx) {
+  for (int i = 0; i < N; ++i) {
+    desired_state(i, 0) = global_path_.poses[nearest_idx + i].pose.position.x;
+    desired_state(i, 1) = global_path_.poses[nearest_idx + i].pose.position.y;
+    desired_state(i, 2) = 0;
+  }
+} else if (global_path_.poses.size() > nearest_idx && global_path_.poses.size() <= N + nearest_idx) {
+  for (int i = 0; i < global_path_.poses.size() - nearest_idx; ++i) {
+    desired_state(i, 0) = global_path_.poses[nearest_idx + i].pose.position.x;
+    desired_state(i, 1) = global_path_.poses[nearest_idx + i].pose.position.y;
+    desired_state(i, 2) = 0;
+  }
+  for (int i = global_path_.poses.size() - nearest_idx; i < N; ++i) {
+    desired_state(i, 0) = global_path_.poses.back().pose.position.x;
+    desired_state(i, 1) = global_path_.poses.back().pose.position.y;
+    desired_state(i, 2) = 0;
+  }
+}
 
     auto result = mpc_ptr->solve(current_state, desired_state,dist,gradient,-1.0);
     geometry_msgs::Twist cmd;
@@ -312,6 +381,7 @@ void grabCallback(geometry_msgs::Vector3 msg)
   gradient.y() = grab.y;
 }
 
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "mpc_tracking_node");
@@ -320,13 +390,14 @@ int main(int argc, char **argv)
     predict_path_pub = nh.advertise<nav_msgs::Path>("/predict_path", 1);
     motion_path_pub = nh.advertise<nav_msgs::Path>("/motion_path", 1);
     navigation_pub = nh.advertise<sentry_serial::navigation>("navigation",10);
-
+    MPC_TRACK_PATH_pub_ = nh.advertise<nav_msgs::Path>("/MPC_TRACK_PATH", 1);
     ros::Subscriber odom_sub = nh.subscribe("/odom", 1, &odomCallback);
     ros::Subscriber bspline_sub = nh.subscribe("planning/bspline", 10, bsplineCallback);
     ros::Subscriber replan_sub = nh.subscribe("planning/replan", 10, replanCallback);
     ros::Subscriber path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, pathCallback);
     ros::Subscriber fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, start_task);
     ros::Subscriber yaw_sub = nh.subscribe("Obstacle_cloudget/yaw_angle", 1000, yaw_callback); 
+    ros::Subscriber update_sub = nh.subscribe("mpc_path_update", 1000, path_update_callback); 
     ros::Subscriber dist_sub = nh.subscribe("/dist", 10, distCallback);
     ros::Subscriber grab_sub = nh.subscribe("/grad", 10, grabCallback);
     control_cmd_pub = nh.createTimer(ros::Duration(0.1), publish_control_cmd);

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(mpc_tracking)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   tf2
+  tf
   visualization_msgs
   bspline
 )
@@ -39,7 +40,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES mpc_test
-  CATKIN_DEPENDS plan_env geometry_msgs nav_msgs roscpp std_msgs tf2 message_runtime
+  CATKIN_DEPENDS plan_env geometry_msgs nav_msgs roscpp std_msgs tf2 message_runtime tf
 #  DEPENDS system_lib
 )
 
@@ -53,6 +54,7 @@ include_directories(
  include
   ${catkin_INCLUDE_DIRS} 
   ${PROJECT_SOURCE_DIR}/include
+  ${PCL_INCLUDE_DIRS}
 )
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)

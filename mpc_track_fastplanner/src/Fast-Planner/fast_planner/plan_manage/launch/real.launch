@@ -79,7 +79,7 @@
 
   <node pkg="waypoint_generator" name="waypoint_generator" type="waypoint_generator" output="log" respawn="true">
     <remap from="~odom" to="odom"/>        
-    <remap from="~goal" to="/move_base_simple/goal"/>
+    <remap from="~goal" to="/move_base_simple1/goal"/>
     <!-- /Graph/nav_pose   /move_base_simple/goal-->  
     <!-- /goal_pose -->
     <!-- /fast_planner_pursuit -->

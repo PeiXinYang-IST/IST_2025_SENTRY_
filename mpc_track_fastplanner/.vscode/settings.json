@@ -10,6 +10,10 @@
     "cmake.sourceDirectory": "/home/rm/catkin_livox_ros_driver2/src/mpc_track_fastplanner/src/lidar2world",
     "files.associations": {
         "variant": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "*.ipp": "cpp",
+        "vector": "cpp",
+        "cmath": "cpp",
+        "complex": "cpp"
     }
 }

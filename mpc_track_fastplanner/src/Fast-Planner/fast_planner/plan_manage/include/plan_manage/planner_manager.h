@@ -7,7 +7,7 @@
 #include <path_searching/astar.h>
 #include <path_searching/kinodynamic_astar.h>
 #include <path_searching/topo_prm.h>
-
+#include <std_msgs/Empty.h>
 #include <plan_env/edt_environment.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <plan_manage/plan_container.hpp>
@@ -15,6 +15,8 @@
 #include <ros/ros.h>
 #include <nav_msgs/Path.h>
 #include <std_msgs/Bool.h>
+#include <pcl/kdtree/kdtree_flann.h>
+
 namespace fast_planner {
 
 // Fast Planner Manager
@@ -26,6 +28,7 @@ public:
   FastPlannerManager();
   ~FastPlannerManager();
   bool jps_updated = false;
+  bool mpc_path_updated = false;
   /* main planning interface */
   bool kinodynamicReplan(Eigen::Vector3d start_pt, Eigen::Vector3d start_vel, Eigen::Vector3d start_acc,
                          Eigen::Vector3d end_pt, Eigen::Vector3d end_vel);
@@ -45,21 +48,26 @@ public:
   EDTEnvironment::Ptr edt_environment_;
   ros::Publisher grad_pub_;
   ros::Subscriber odom_sub;
+  ros::Subscriber mpc_path_sub;
   ros::Subscriber nav_pose_sub;
   ros::Subscriber path_sub_,global_sub,JPS_sub;
   vector<Eigen::Vector3d> move_base_point_set;
   ros::Publisher raw_path_pub_;
   ros::Publisher simplified_path_pub_;
-  nav_msgs::Path JPS_path_,global_path;
+  ros::Publisher idx_pub_;
+  nav_msgs::Path JPS_path_,global_path,mpc_path_;
+  ros::Publisher mpc_path_update_pub_;
 private:
   /* main planning algorithms & modules */
   SDFMap::Ptr sdf_map_;
+  Eigen::Vector3d odom_pos;
   unique_ptr<Astar> geo_path_finder_;
   unique_ptr<KinodynamicAstar> kino_path_finder_;
   unique_ptr<TopologyPRM> topo_prm_;
   vector<BsplineOptimizer::Ptr> bspline_optimizers_;
   geometry_msgs::PoseStamped current_nav_pose;
   geometry_msgs::PoseStamped last_nav_pose;
+  double path_idx;
   void updateTrajInfo();
 
   // topology guided optimization
@@ -86,7 +94,7 @@ private:
   void visualizePaths(const std::vector<Eigen::Vector3d>& global_points,const std::vector<Eigen::Vector3d>& points);
     // !SECTION stable
   // SECTION developing
-
+  void mpcpathCallback(const nav_msgs::Path::ConstPtr& msg);
 public:
   typedef unique_ptr<FastPlannerManager> Ptr;
 
