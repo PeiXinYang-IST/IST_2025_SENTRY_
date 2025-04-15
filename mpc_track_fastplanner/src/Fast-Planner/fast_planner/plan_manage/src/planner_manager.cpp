@@ -37,10 +37,19 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   dist_pub_ = nh.advertise<std_msgs::Float64>("/dist", 10);
   path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &FastPlannerManager::pathCallback, this);
   JPS_sub = nh.subscribe("/jps_path", 10, &FastPlannerManager::JPS_pathCallback, this);
+  trajsub = nh.subscribe("/trajectory", 1, &FastPlannerManager::trajCallBack, this,
+                              ros::TransportHints().tcpNoDelay());
   nav_pose_sub = nh.subscribe("/nav_pose", 1, &FastPlannerManager::nav_pose_Callback, this);
   mpc_path_update_pub_ = nh.advertise<std_msgs::Empty>("/mpc_path_update", 1);
   mpc_path_sub = nh.subscribe("MPC_TRACK_PATH", 10, &FastPlannerManager::mpcpathCallback, this);
   idx_pub_ = nh.advertise<std_msgs::Float64>("/idx", 10);
+
+  check_collision_pub = nh.createTimer(
+            ros::Duration(0.25), 
+            &FastPlannerManager::GCOPTER_check_collision, 
+            this
+        );
+
   local_data_.traj_id_ = 0;
   sdf_map_.reset(new SDFMap);
   ROS_WARN("init path"); 
@@ -48,38 +57,108 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   edt_environment_.reset(new EDTEnvironment);
   edt_environment_->setMap(sdf_map_);
   ROS_WARN("init edt");
-  if (use_kinodynamic_path) {
-    kino_path_finder_.reset(new KinodynamicAstar);
-    kino_path_finder_->setParam(nh);
-    kino_path_finder_->setEnvironment(edt_environment_);
-    kino_path_finder_->init();
-  }
-  if (use_geometric_path) {
-    geo_path_finder_.reset(new Astar);
-    geo_path_finder_->setParam(nh);
-    geo_path_finder_->setEnvironment(edt_environment_);
-    geo_path_finder_->init();
-  }
-  if (use_optimization) {
-    bspline_optimizers_.resize(10);
-    for (int i = 0; i < 10; ++i) {
-      bspline_optimizers_[i].reset(new BsplineOptimizer);
-      bspline_optimizers_[i]->setParam(nh);
-      bspline_optimizers_[i]->setEnvironment(edt_environment_);
-    }
-  }
-  if (use_topo_path) {
-    topo_prm_.reset(new TopologyPRM);
-    topo_prm_->setEnvironment(edt_environment_);
-    topo_prm_->init(nh);
-  }
+  // if (use_kinodynamic_path) {
+  //   kino_path_finder_.reset(new KinodynamicAstar);
+  //   kino_path_finder_->setParam(nh);
+  //   kino_path_finder_->setEnvironment(edt_environment_);
+  //   kino_path_finder_->init();
+  // }
+  // if (use_geometric_path) {
+  //   geo_path_finder_.reset(new Astar);
+  //   geo_path_finder_->setParam(nh);
+  //   geo_path_finder_->setEnvironment(edt_environment_);
+  //   geo_path_finder_->init();
+  // }
+  // if (use_optimization) {
+  //   bspline_optimizers_.resize(10);
+  //   for (int i = 0; i < 10; ++i) {
+  //     bspline_optimizers_[i].reset(new BsplineOptimizer);
+  //     bspline_optimizers_[i]->setParam(nh);
+  //     bspline_optimizers_[i]->setEnvironment(edt_environment_);
+  //   }
+  // }
+  // if (use_topo_path) {
+  //   topo_prm_.reset(new TopologyPRM);
+  //   topo_prm_->setEnvironment(edt_environment_);
+  //   topo_prm_->init(nh);
+  // }
 }    
 
 bool global_replan;
 
+
 void FastPlannerManager::nav_pose_Callback(const geometry_msgs::PoseStamped::ConstPtr& msg){
   current_nav_pose = *msg;
 }
+bool receive_traj = false;
+void FastPlannerManager::GCOPTER_check_collision(const ros::TimerEvent &e)
+{
+  if(!receive_traj) return;
+    // 遍历 currentTraj_ 的点并查询 edt
+    double query_interval = 0.1; // 查询间隔时间
+    // ros::Time start_time = ros::Time::now();
+
+    double total_duration = currentTraj_.getTotalDuration();
+
+    for (double t = 0.1; t < total_duration; t += query_interval) {
+      Eigen::Vector3d point = currentTraj_.getPos(t); // 获取轨迹点
+      point.z() = 0.2;
+      double dist = edt_environment_->evaluateCoarseEDT(point, -1.0); // 查询 edt 值
+      //ROS_WARN("dist: %f", dist);
+      if(dist < 0.05)
+      {
+        ROS_WARN("collision");
+        std_msgs::Empty mpc_path_update_msg;
+        mpc_path_update_pub_.publish(mpc_path_update_msg);
+      }
+    }    
+    // ros::Time end_time = ros::Time::now();
+    // ROS_INFO("Time taken to get total duration: %f seconds", (end_time - start_time).toSec());  
+}
+
+void FastPlannerManager::trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
+    // ROS_WARN("receive traj");
+    // 转换为 std::vector<double> 类型的持续时间
+    const int pieceNum = msg->durations.size();
+    std::vector<double> durations;
+    durations.reserve(pieceNum);
+    for (const auto &dur : msg->durations) {
+      durations.push_back(dur);
+    }   
+    // 填充系数矩阵（保持 3x6 形状）
+
+    std::vector<Eigen::Matrix<double, 3, 6>> coeffMats;
+    coeffMats.reserve(pieceNum);
+
+    for (int i = 0; i < pieceNum; ++i) {
+        Eigen::Matrix<double, 3, 6> coeffMat;
+
+        // X方向
+        for (int j = 0; j < 6; ++j) {
+            coeffMat(0, j) = msg->coeffs_x.rows[i].data[j];
+        }
+
+        // Y方向
+        for (int j = 0; j < 6; ++j) {
+            coeffMat(1, j) = msg->coeffs_y.rows[i].data[j];
+        }
+
+        // Z方向
+        for (int j = 0; j < 6; ++j) {
+            coeffMat(2, j) = msg->coeffs_z.rows[i].data[j];
+        }
+
+        // 无需转置，直接添加
+        coeffMats.push_back(coeffMat);
+    }
+
+    // 构造轨迹对象
+    currentTraj_ = Trajectory<5>(durations, coeffMats);
+    trajStartTime_ = ros::Time::now(); // 记录轨迹开始时间
+    receive_traj = true;
+}
+
+
 
 //获取JPS路径 作为kinodynamic A* 前端引导
 void FastPlannerManager::JPS_pathCallback(const nav_msgs::Path::ConstPtr&msg){
@@ -216,53 +295,53 @@ void douglasPeucker(const std::vector<Eigen::Vector3d>& points,
 std::vector<Eigen::Vector3d> simplified_points;
 void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
 //mpc路径不为空
-  if(mpc_path_updated)
-  {
-  pcl::KdTreeFLANN<pcl::PointXY> kdtree;
-  pcl::PointCloud<pcl::PointXY>::Ptr path_points(new pcl::PointCloud<pcl::PointXY>);
+//   if(mpc_path_updated)
+//   {
+//   pcl::KdTreeFLANN<pcl::PointXY> kdtree;
+//   pcl::PointCloud<pcl::PointXY>::Ptr path_points(new pcl::PointCloud<pcl::PointXY>);
 
-  // 填充路径点
-  for (const auto& pose : mpc_path_.poses) {
-    pcl::PointXY pt;
-    pt.x = pose.pose.position.x;
-    pt.y = pose.pose.position.y;
-    path_points->push_back(pt);
-  }
-  kdtree.setInputCloud(path_points);
+//   // 填充路径点
+//   for (const auto& pose : mpc_path_.poses) {
+//     pcl::PointXY pt;
+//     pt.x = pose.pose.position.x;
+//     pt.y = pose.pose.position.y;
+//     path_points->push_back(pt);
+//   }
+//   kdtree.setInputCloud(path_points);
   
 
-pcl::PointXY query_pt;
-query_pt.x = odom_pos[0];
-query_pt.y = odom_pos[1];
+// pcl::PointXY query_pt;
+// query_pt.x = odom_pos[0];
+// query_pt.y = odom_pos[1];
 
-int nearest_idx;
-float nearest_dist;
-std::vector<int> indices(1);
-std::vector<float> distances(1);
+// int nearest_idx;
+// float nearest_dist;
+// std::vector<int> indices(1);
+// std::vector<float> distances(1);
 
-if (kdtree.nearestKSearch(query_pt, 1, indices, distances) > 0) {
-    nearest_idx = indices[0];
-    nearest_dist = distances[0];
-}
-  std_msgs::Float64 idx_msg;
-  idx_msg.data = nearest_idx;
-  idx_pub_.publish(idx_msg);
-  for(size_t i = nearest_idx;i<mpc_path_.poses.size();i+=5)
-  {
-    geometry_msgs::PoseStamped pose = mpc_path_.poses[i];
-    Eigen::Vector3d point(
-        pose.pose.position.x, 
-        pose.pose.position.y,
-        pose.pose.position.z
-    );
-    double dist = edt_environment_->evaluateCoarseEDT(point, -1.0);
-    if(dist < 0.1)
-    {
-      std_msgs::Empty mpc_path_update_msg;
-      mpc_path_update_pub_.publish(mpc_path_update_msg);
-    }
-  }
-  }
+// if (kdtree.nearestKSearch(query_pt, 1, indices, distances) > 0) {
+//     nearest_idx = indices[0];
+//     nearest_dist = distances[0];
+// }
+//   std_msgs::Float64 idx_msg;
+//   idx_msg.data = nearest_idx;
+//   idx_pub_.publish(idx_msg);
+//   for(size_t i = nearest_idx;i<mpc_path_.poses.size();i+=5)
+//   {
+//     geometry_msgs::PoseStamped pose = mpc_path_.poses[i];
+//     Eigen::Vector3d point(
+//         pose.pose.position.x, 
+//         pose.pose.position.y,
+//         pose.pose.position.z
+//     );
+//     double dist = edt_environment_->evaluateCoarseEDT(point, -1.0);
+//     if(dist < 0.1)
+//     {
+//       std_msgs::Empty mpc_path_update_msg;
+//       mpc_path_update_pub_.publish(mpc_path_update_msg);
+//     }
+//   }
+//   }
 
   //////////////////////////////////////////////////////////////////
     // move_base_point_set.clear();

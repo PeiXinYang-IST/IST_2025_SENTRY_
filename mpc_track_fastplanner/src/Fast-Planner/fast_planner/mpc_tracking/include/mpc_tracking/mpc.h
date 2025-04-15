@@ -13,7 +13,7 @@ public:
     Mpc(/* args */);
     ~Mpc();
 
-    vector<double> solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state,double dist,Eigen::Vector2d gradient,double safe_distance);
+    vector<double> solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state);
 };
 
 

@@ -16,6 +16,10 @@
 #include <nav_msgs/Path.h>
 #include <std_msgs/Bool.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <gcopter/PolyTrajectory.h>
+#include <gcopter/CoeffRow.h>
+#include <gcopter/CoeffMatrix.h>
+#include "gcopter/trajectory.hpp"
 
 namespace fast_planner {
 
@@ -53,10 +57,15 @@ public:
   ros::Subscriber path_sub_,global_sub,JPS_sub;
   vector<Eigen::Vector3d> move_base_point_set;
   ros::Publisher raw_path_pub_;
+  ros::Subscriber trajsub;
   ros::Publisher simplified_path_pub_;
   ros::Publisher idx_pub_;
   nav_msgs::Path JPS_path_,global_path,mpc_path_;
   ros::Publisher mpc_path_update_pub_;
+  Trajectory<5> currentTraj_;
+  ros::Time trajStartTime_; // 轨迹开始时间
+  ros::Timer check_collision_pub;
+
 private:
   /* main planning algorithms & modules */
   SDFMap::Ptr sdf_map_;
@@ -95,6 +104,8 @@ private:
     // !SECTION stable
   // SECTION developing
   void mpcpathCallback(const nav_msgs::Path::ConstPtr& msg);
+  void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg);
+  void GCOPTER_check_collision(const ros::TimerEvent &e);
 public:
   typedef unique_ptr<FastPlannerManager> Ptr;
 

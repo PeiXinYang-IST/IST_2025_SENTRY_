@@ -1,6 +1,6 @@
 <launch>
     <node pkg="move_base" type="move_base" respawn="true" name="move_base1" output="log" clear_params="true" args="/map:=prior_map /odom:=odom" >
-        <param name="planner_frequency" value="15.0" />
+        <param name="planner_frequency" value="30.0" />
         <param name="planner_patience" value="10.0" />
         <param name="use_dijkstra" value="false" />
         <param name="cost_factor" value="5.0" />
@@ -20,7 +20,7 @@
     <!-- <include file="$(find sentry_nav)/launch/pid.launch">
 	</include> -->
 
-    <node pkg="sentry_nav" type="global_to_local" name="global_to_local"/>
+    <!-- <node pkg="sentry_nav" type="global_to_local" name="global_to_local"/> -->
 
     <!-- <include file="$(find sentry_decision)/launch/pursuit.launch">
 	</include> -->

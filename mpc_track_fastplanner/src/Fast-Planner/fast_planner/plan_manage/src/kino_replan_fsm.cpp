@@ -42,7 +42,7 @@ void KinoReplanFSM::init(ros::NodeHandle& nh) {
   new_pub_     = nh.advertise<std_msgs::Empty>("/planning/new", 10);
   global_pub_ = nh.advertise<std_msgs::Bool>("/planning/global_enable", 10);
   bspline_pub_ = nh.advertise<plan_manage::Bspline>("/planning/bspline", 10);
-  path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &KinoReplanFSM::pathCallback, this);
+  // path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &KinoReplanFSM::pathCallback, this);
   fast_planner_sub_ = nh.subscribe("/MY_ICP/fast_planner_start", 10, &KinoReplanFSM::start_task, this);
   trajectory_start_time_ = ros::Time::now();  // 初始化为当前时间
 }

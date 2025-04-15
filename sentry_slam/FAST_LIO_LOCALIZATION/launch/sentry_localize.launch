@@ -49,8 +49,8 @@
 </node>
 
 	<!-- pointscloud2 to laserscans -->
-	<include file="$(find fast_lio_localization)/launch/PointsCloud2toLaserscan.launch">
-	</include>
+	<!-- <include file="$(find fast_lio_localization)/launch/PointsCloud2toLaserscan.launch">
+	</include> -->
 
 	<include file="$(find fast_lio_localization)/launch/icp.launch">
 	</include>

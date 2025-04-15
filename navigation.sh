@@ -49,10 +49,17 @@ restart_nodes() {
     # echo "NAV relaunched with PID: $PID_PID"
 
     # sleep 1
-    # roslaunch plan_manage real.launch &
-    # PID_FAST_PLANNER=$!
-    # echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
+    roslaunch plan_manage real.launch &
+    PID_FAST_PLANNER=$!
+    echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
+    roslaunch plan_manage mpc.launch &
+    PID_MPC=$!
+    echo "Fast planner relaunched with PID: $PID_MPC"
+
+    roslaunch gcopter global_planning.launch &
+    PID_GOAL=$!
+    echo "Goal relaunched with PID: $PID_GOAL"
     # 启动Serial节点
     # roslaunch sentry_serial goal_send.launch &
     # PID_SERIAL=$!

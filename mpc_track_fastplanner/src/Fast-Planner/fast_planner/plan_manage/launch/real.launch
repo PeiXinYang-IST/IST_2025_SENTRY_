@@ -2,7 +2,7 @@
   <!-- size of map, change the size in x, y, z according to your application -->
   <arg name="map_size_x" value="22.0"/>
   <arg name="map_size_y" value="22.0"/>
-  <arg name="map_size_z" value="0.3"/><!--unit:m-->
+  <arg name="map_size_z" value="0.5"/><!--unit:m-->
 
   <!-- topic of your odometry such as VIO or LIO -->
   <arg name="odom_topic" value="/odom" />
@@ -87,13 +87,6 @@
     <param name="waypoint_type" value="manual-lonely-waypoint"/>    
   </node>  
 
-
-  <node pkg="mpc_tracking" name="mpc_tracking_node" type="mpc_tracking_node" output="screen" respawn="true" />
-
-
-  <node name="pos_vel_plot" pkg="rqt_plot" type="rqt_plot" 
-    args="/mpc_cmd_vel/linear">
-  </node>
   <!-- args="/odom/twist/twist/linear" -->
   <!-- args="/mpc_cmd_vel/linear" -->
 </launch>

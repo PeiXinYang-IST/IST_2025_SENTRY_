@@ -156,7 +156,7 @@ void MY_ICP::publish_map_msg()
     //icp看门狗
     if(++icp_transform_update>=50 && icp_start && need_relocalization)  //其实就是 50/25 = 2s 如果这2s之间icp未更新则说明lio飘飞 重启所有相关节点
     {
-        ROS_WARN("ICP CHECK!!!");
+        // ROS_WARN("ICP CHECK!!!");
         icp_transform_update=0;
         if(now_transform == transform && now_transform!=Eigen::Matrix4f::Identity())
         {
@@ -312,8 +312,8 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
             restart_all_pub.publish(restart_msg);
         }
 
-        Eigen::Affine3f transform_3f = Eigen::Affine3f::Identity();
-        transform_3f = gicp.getFinalTransformation(); // 获取变换矩阵
+        // Eigen::Affine3f transform_3f = Eigen::Affine3f::Identity();
+        // transform_3f = gicp.getFinalTransformation(); // 获取变换矩阵
         
         if(gicp.getFitnessScore()>icp_correct || icp_converged_times<20)
         icp_transform = transform;
@@ -336,7 +336,7 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
         fast_planner_pub_.publish(fast_planner_start_msg);
         }
         
-        remove_cloud_length = fmin(abs(40*(0.01-last_score)),0.4);   //一般配准好的时候大概是 0.005~0.001 左右 50*0.008=0.4 根据icp配准情况进行梯度设置搜索距离
+        // remove_cloud_length = fmin(abs(40*(0.01-last_score)),0.4);   //一般配准好的时候大概是 0.005~0.001 左右 50*0.008=0.4 根据icp配准情况进行梯度设置搜索距离
         remove_cloud_length = fmax(remove_cloud_length,0.1);
         // pcl::transformPointCloud(*incoming_cloud_, *transformed_cloud_, transform); // 应用变换
 
@@ -350,7 +350,7 @@ void MY_ICP::performRelocalization(const Eigen::Matrix4f& initial_pose){
         std::cout << "tranDist:" << tranDist << " angleDist:" << angleDist << std::endl;
 #endif
         last_score = gicp.getFitnessScore();
-        ROS_WARN("ICP SCORE:%f",last_score);
+        // ROS_WARN("ICP SCORE:%f",last_score);
         icp_converged_times++;
     } else {
         restart_msg.data=true;
