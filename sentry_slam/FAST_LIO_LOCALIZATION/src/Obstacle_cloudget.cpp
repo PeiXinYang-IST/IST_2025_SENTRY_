@@ -50,7 +50,6 @@ void Obstacle_cloud_get::navigationModeCallback(const std_msgs::Bool::ConstPtr& 
     }
 }
 
-
 void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) // 获取地图信息
 {
         // 获取地图信息
@@ -65,7 +64,7 @@ void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr
         // 清空点云数据
         world_Obstacle_cloud_->points.clear();
         world_Obstacle_cloud_->width = 0;
-        world_Obstacle_cloud_->height = 8;  
+        world_Obstacle_cloud_->height = 3;  
  
         // 遍历地图数据，找到值为100的点（障碍物）
         for (int y = 0; y < height; ++y) {
@@ -82,19 +81,9 @@ void Obstacle_cloud_get::gridmapCallback(const nav_msgs::OccupancyGrid::ConstPtr
                     world_Obstacle_cloud_->points.push_back(point);
                     point.z = 0.1;
                     world_Obstacle_cloud_->points.push_back(point);
-                    point.z = 0.15;
-                    world_Obstacle_cloud_->points.push_back(point);
-                    point.z = 0.2;
-                    world_Obstacle_cloud_->points.push_back(point);
-                    point.z = 0.25;
-                    world_Obstacle_cloud_->points.push_back(point);
-                    point.z = 0.3;
-                    world_Obstacle_cloud_->points.push_back(point);
-                    point.z = 0.35;
-                    world_Obstacle_cloud_->points.push_back(point);
 
                     world_Obstacle_cloud_->width += 1;
-                }
+                }   
             }
         }
 
@@ -335,8 +324,8 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr filled_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     for (auto& point : cloud_filtered_radius->points) {
-        if (point.z > 0.2 && point.z < 1.7) {
-            for (float z = 0.0; z <= 0.35; z += 0.05) {
+        if (point.z > 0.35 && point.z < 1.7) {
+            for (float z = 0.0; z <= 0.1; z += 0.05) {
                 pcl::PointXYZ filled_point = point;
                 filled_point.z = z;
                 filled_cloud->points.push_back(filled_point);

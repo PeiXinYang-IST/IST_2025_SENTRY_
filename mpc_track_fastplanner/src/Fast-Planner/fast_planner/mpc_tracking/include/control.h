@@ -38,6 +38,10 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <tf/tf.h>
 #include <sentry_serial/navigation.h>
+#include "std_msgs/Empty.h"
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 using namespace std;
 
@@ -71,19 +75,25 @@ private:
     ros::Publisher cmd_vel_pub;
     ros::Subscriber map_to_odom_sub;
     ros::Subscriber global_path_sub;
+    ros::Subscriber replan_sub;
     Eigen::Affine3d transform = Eigen::Affine3d::Identity();
     std::vector<Eigen::Vector3d> dijstra_pos;
+    pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr kdtree;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr trajectory_cloud;
+    std::vector<double> trajectory_times;  // 新增轨迹时间存储
     ros::NodeHandle nh;
     Trajectory<5> currentTraj_;
     ros::Time trajStartTime_; // 轨迹开始时间
     ros::Timer control_cmd_pub;
     bool get_traj;
     Eigen::Vector3d current_state;
+    Eigen::Vector3d current_state_vel;
     std::mutex traj_mutex_;
     unique_ptr<Mpc> mpc_ptr;
     nav_msgs::Path predict_path;
     sentry_serial::navigation navigation;
     bool get_global_path = false;
+    double traj_duration = 0.0;
 public:
     controller(const Config &conf,ros::NodeHandle &nh_)
     : config(conf),
@@ -93,7 +103,7 @@ public:
     trajsub = nh.subscribe("trajectory", 1, &controller::trajCallBack, this,
                               ros::TransportHints().tcpNoDelay());
     control_cmd_pub = nh.createTimer(
-            ros::Duration(0.05), 
+            ros::Duration(0.1), 
             &controller::publish_control_cmd, 
             this
         );
@@ -105,7 +115,18 @@ public:
     navigation_pub = nh.advertise<sentry_serial::navigation>("navigation",10);
     cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/mpc_cmd_vel", 10);
     global_path_sub = nh.subscribe("/move_base1/NavfnROS/plan", 10, &controller::globalPathCallback, this);
+    replan_sub = nh.subscribe("/mpc_path_update",1, &controller::replanCallback, this);
+    trajectory_cloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
+    kdtree.reset(new pcl::KdTreeFLANN<pcl::PointXYZ>);
     mpc_ptr.reset(new Mpc());
+}
+
+void replanCallback(const std_msgs::Empty::ConstPtr &msg)
+{
+  const double time_out = 0.01;
+  ros::Time time_now = ros::Time::now();
+  double t_stop = (time_now - trajStartTime_).toSec() + time_out;
+  traj_duration = min(t_stop, traj_duration);
 }
 
 void globalPathCallback(const nav_msgs::Path::ConstPtr &msg)
@@ -113,7 +134,7 @@ void globalPathCallback(const nav_msgs::Path::ConstPtr &msg)
     if (msg->poses.size() > 0)
     {
         dijstra_pos.clear();
-        for (size_t i = 0; i < msg->poses.size(); i += 10)
+        for (size_t i = 0; i < msg->poses.size(); i += 5)
         {
             const auto &pose = msg->poses[i];
             Eigen::Vector3d point(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
@@ -140,6 +161,7 @@ void mapToOdomCallback(const geometry_msgs::TransformStamped::ConstPtr &msg)
                                                 0).toRotationMatrix();   
 }
 
+
 void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
     if (!get_global_path)
@@ -156,6 +178,8 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
 
 void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
     std::lock_guard<std::mutex> lock(traj_mutex_);
+    trajectory_cloud->points.clear();
+    trajectory_times.clear();
     // 校验数据有效性
     if (msg->durations.empty() || 
         msg->coeffs_x.rows.size() != msg->durations.size() ||
@@ -199,8 +223,20 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
         coeffMats.push_back(coeffMat);
     }
 
-    // 构造轨迹对象
+    // 构造轨迹对象 
     currentTraj_ = Trajectory<5>(durations, coeffMats);
+    for (double t = 0; t < currentTraj_.getTotalDuration(); t += 0.01) {
+            Eigen::Vector3d pos = currentTraj_.getPos(t);
+            pcl::PointXYZ point;
+            point.x = pos.x();
+            point.y = pos.y();
+            point.z = pos.z();
+            trajectory_cloud->points.push_back(point);
+            trajectory_times.push_back(t);
+        }
+    
+    traj_duration = currentTraj_.getTotalDuration();
+    kdtree->setInputCloud(trajectory_cloud);
     trajStartTime_ = ros::Time::now(); // 记录轨迹开始时间
     get_traj = true;
     }
@@ -215,12 +251,47 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
     tar_vel.reserve(N);
     tar_acc.reserve(N);
     double currentTime = (ros::Time::now() - trajStartTime_).toSec();
+
+    pcl::PointXYZ search_point;
+        search_point.x = current_state.x();
+        search_point.y = current_state.y();
+        search_point.z = current_state.z();
+
+        std::vector<int> pointIdx(1);
+        std::vector<float> pointDist(1);
+        if (kdtree->nearestKSearch(search_point, 1, pointIdx, pointDist) == 0) {
+            ROS_WARN("No nearest point found");
+            return;
+        }
+
+    const int nearest_index = pointIdx[0];
+    const double t_start = trajectory_times[nearest_index];
     Eigen::MatrixXd desired_state = Eigen::MatrixXd::Zero(N, 3);
 
-    if(currentTime + (N-1)*dt <= currentTraj_.getTotalDuration()) {
+
+        //kdtree搜索基准
+        // for (int i = 0; i < N; ++i) {
+        //     const double t = std::min(t_start + i*dt, traj_duration);
+            
+        //     const Eigen::Vector3d pos = currentTraj_.getPos(t);
+        //     const Eigen::Vector3d vel = currentTraj_.getVel(t);
+        //     const Eigen::Vector3d acc = currentTraj_.getAcc(t);
+
+        //     desired_state(i, 0) = pos.x();
+        //     desired_state(i, 1) = pos.y();
+        //     desired_state(i, 2) = pos.z();
+
+        //     tar_pos.push_back(pos);
+        //     tar_vel.push_back(vel);
+        //     tar_acc.push_back(acc);
+        // }
+    
+    ////////////////////////////////////////////////////////////////////
+    //时间基准
+    if(t_start + (N-1)*dt <= traj_duration) {
         // 计算目标位置
         for (int i = 0; i < N; ++i) {
-            const double t = currentTime + i * dt;
+            const double t = t_start + i * dt;
             desired_state(i, 0) = currentTraj_.getPos(t)(0);
             desired_state(i, 1) = currentTraj_.getPos(t)(1);
             desired_state(i, 2) = currentTraj_.getPos(t)(2);
@@ -229,12 +300,12 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
             tar_vel.push_back(currentTraj_.getVel(t));
             tar_acc.push_back(currentTraj_.getAcc(t));
         }
-    }else if(currentTime + (N-1)*dt > currentTraj_.getTotalDuration() 
-    && currentTime < currentTraj_.getTotalDuration()) {
+    }else if(t_start + (N-1)*dt > traj_duration
+    && t_start < traj_duration) {
         // 轨迹未结束，使用当前时间到轨迹结束的部分
         for (int i = 0; i < N; ++i) {
-            const double t = currentTime + i * dt;
-            if (t <= currentTraj_.getTotalDuration()) {
+            const double t = t_start + i * dt;
+            if (t <= traj_duration) {
                 desired_state(i, 0) = currentTraj_.getPos(t)(0);
                 desired_state(i, 1) = currentTraj_.getPos(t)(1);
                 desired_state(i, 2) = currentTraj_.getPos(t)(2);
@@ -242,26 +313,47 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
                 tar_vel.push_back(currentTraj_.getVel(t));
                 tar_acc.push_back(currentTraj_.getAcc(t));
             } else {
-                desired_state(i, 0) = currentTraj_.getPos(currentTraj_.getTotalDuration())(0);
-                desired_state(i, 1) = currentTraj_.getPos(currentTraj_.getTotalDuration())(1);
-                desired_state(i, 2) = currentTraj_.getPos(currentTraj_.getTotalDuration())(2);
-                tar_pos.push_back(currentTraj_.getPos(currentTraj_.getTotalDuration()));
-                tar_vel.push_back(currentTraj_.getVel(currentTraj_.getTotalDuration()));
-                tar_acc.push_back(currentTraj_.getAcc(currentTraj_.getTotalDuration()));
+                desired_state(i, 0) = currentTraj_.getPos(traj_duration)(0);
+                desired_state(i, 1) = currentTraj_.getPos(traj_duration)(1);
+                desired_state(i, 2) = currentTraj_.getPos(traj_duration)(2);
+                tar_pos.push_back(currentTraj_.getPos(traj_duration));
+                tar_vel.push_back(currentTraj_.getVel(traj_duration));
+                tar_acc.push_back(currentTraj_.getAcc(traj_duration));
             }
         }
     }   
      else {
         // 轨迹结束，使用最后一个位置
         for (int i = 0; i < N; ++i) {
-            desired_state(i, 0) = currentTraj_.getPos(currentTraj_.getTotalDuration())(0);
-            desired_state(i, 1) = currentTraj_.getPos(currentTraj_.getTotalDuration())(1);
-            desired_state(i, 2) = currentTraj_.getPos(currentTraj_.getTotalDuration())(2);
-            tar_pos.push_back(currentTraj_.getPos(currentTraj_.getTotalDuration()));
-            tar_vel.push_back(currentTraj_.getVel(currentTraj_.getTotalDuration()));
-            tar_acc.push_back(currentTraj_.getAcc(currentTraj_.getTotalDuration()));
+            desired_state(i, 0) = currentTraj_.getPos(traj_duration)(0);
+            desired_state(i, 1) = currentTraj_.getPos(traj_duration)(1);
+            desired_state(i, 2) = currentTraj_.getPos(traj_duration)(2);
+            tar_pos.push_back(currentTraj_.getPos(traj_duration));
+            tar_vel.push_back(currentTraj_.getVel(traj_duration));
+            tar_acc.push_back(currentTraj_.getAcc(traj_duration));
         }
     }
+
+//////////////////////////////////////////////////////////////////////////////move base 
+    // if (dijstra_pos.size() >= N) {
+    //     for (int i = 0; i < N; ++i) {
+    //         desired_state(i, 0) = dijstra_pos[i].x();
+    //         desired_state(i, 1) = dijstra_pos[i].y();
+    //         desired_state(i, 2) = dijstra_pos[i].z();
+    //     }
+    // } else {
+    //     for (int i = 0; i < dijstra_pos.size(); ++i) {
+    //         desired_state(i, 0) = dijstra_pos[i].x();
+    //         desired_state(i, 1) = dijstra_pos[i].y();
+    //         desired_state(i, 2) = dijstra_pos[i].z();
+    //     }
+    //     for (int i = dijstra_pos.size(); i < N; ++i) {
+    //         desired_state(i, 0) = dijstra_pos.back().x();
+    //         desired_state(i, 1) = dijstra_pos.back().y();
+    //         desired_state(i, 2) = dijstra_pos.back().z();
+    //     }
+    // }
+
     
     // Visualize desired state
     visualization_msgs::MarkerArray desired_marker_array;
@@ -280,8 +372,8 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
         marker.pose.orientation.y = 0.0;
         marker.pose.orientation.z = 0.0;
         marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.15;
-        marker.scale.y = 0.15;
+        marker.scale.x = 0.1;
+        marker.scale.y = 0.1;
         marker.scale.z = 0.4;
         marker.color.a = 1.0;
         marker.color.r = 1.0;
@@ -291,7 +383,7 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
     }
     desired_pos_pub_.publish(desired_marker_array);
     
-    auto result = mpc_ptr->solve(current_state, desired_state);
+    auto result = mpc_ptr->solve(current_state, desired_state,0,0);
     // predict_path.header.frame_id = "odom";
     // predict_path.header.stamp = ros::Time::now();
     geometry_msgs::PoseStamped pose_msg;
@@ -316,8 +408,8 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
         marker.pose.orientation.y = 0.0;
         marker.pose.orientation.z = 0.0;
         marker.pose.orientation.w = 1.0;
-        marker.scale.x = 0.15;
-        marker.scale.y = 0.15;
+        marker.scale.x = 0.1;
+        marker.scale.y = 0.1;
         marker.scale.z = 0.4; // Height of the cylinder
         marker.color.a = 1.0;
         marker.color.r = 0.0;
@@ -330,15 +422,23 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
     predict_pos_pub_.publish(marker_array);
 
     geometry_msgs::Twist cmd;
-    cmd.linear.x = result[0]*0.4;
-    cmd.linear.y = -result[1]*0.4;
+    cmd.linear.x = result[0]*0.47;
+    cmd.linear.y = result[1]*0.47;
     cmd.linear.z = result[2];
 
+    double dx = current_state(0) -dijstra_pos.back().x();
+    double dy = current_state(1) - dijstra_pos.back().y();
+
+    if(std::sqrt(dx * dx + dy * dy) < 0.7)
+    {
+    cmd.linear.x = 0.3 * cmd.linear.x;   
+    cmd.linear.y = 0.3 * cmd.linear.y;   
+    }
 
     cmd_vel_pub.publish(cmd);
 
-    navigation.x.data=cmd.linear.x;
-    navigation.y.data=cmd.linear.y;
+    navigation.x.data=cmd.linear.y;
+    navigation.y.data=cmd.linear.x;
     navigation.z.data=cmd.linear.z;            
 
 	navigation_pub.publish(navigation);
@@ -346,8 +446,6 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
     // predict_path_pub.publish(predict_path);
     // predict_path.poses.clear();
     }
-
-
 
     ~controller();
 };

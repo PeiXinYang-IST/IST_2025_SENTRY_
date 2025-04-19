@@ -2,7 +2,7 @@
     <node pkg="move_base" type="move_base" respawn="true" name="move_base1" output="log" clear_params="true" args="/map:=prior_map /odom:=odom" >
         <param name="planner_frequency" value="30.0" />
         <param name="planner_patience" value="10.0" />
-        <param name="use_dijkstra" value="false" />
+        <param name="use_dijkstra" value="true" />
         <param name="cost_factor" value="5.0" />
         <rosparam file="$(find sentry_nav)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
         <rosparam file="$(find sentry_nav)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />

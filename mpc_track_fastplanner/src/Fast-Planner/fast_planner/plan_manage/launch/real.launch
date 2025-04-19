@@ -1,7 +1,7 @@
 <launch>
   <!-- size of map, change the size in x, y, z according to your application -->
-  <arg name="map_size_x" value="22.0"/>
-  <arg name="map_size_y" value="22.0"/>
+  <arg name="map_size_x" value="25.0"/>
+  <arg name="map_size_y" value="25.0"/>
   <arg name="map_size_z" value="0.5"/><!--unit:m-->
 
   <!-- topic of your odometry such as VIO or LIO -->

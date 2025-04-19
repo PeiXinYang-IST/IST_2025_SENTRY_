@@ -1,5 +1,6 @@
 #include "mpc_tracking/mpc.h"
 #include <cppad/ipopt/solve.hpp>
+#include <ros/ros.h>
 
 using CppAD::AD;
 
@@ -21,10 +22,12 @@ class FG_eval
 {
 public:
     Eigen::MatrixXd desired_state_;
-    
-    FG_eval(Eigen::MatrixXd desired_state) {
-        desired_state_ = desired_state;
-    }
+    double u_des_;  // 期望纵向速度
+    double v_des_;  // 期望横向速度
+
+FG_eval(Eigen::MatrixXd desired_state, double u_des, double v_des) 
+        : desired_state_(desired_state), u_des_(u_des), v_des_(v_des) {}
+
     typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
 
     void operator()(ADvector &fg, const ADvector &vars) {
@@ -52,7 +55,7 @@ public:
             fg[0] += u_weight * CppAD::pow(vars[u_start + i ] , 2);
             fg[0] += v_weight * CppAD::pow(vars[v_start + i ] , 2);
         }
-
+        
         fg[1 + x_start] = vars[x_start];
         fg[1 + y_start] = vars[y_start];
         fg[1 + psi_start] = vars[psi_start];
@@ -74,10 +77,11 @@ public:
             fg[1 + y_start + i] = y_1 - (y_0 + (u_0 * CppAD::sin(psi_0) + v_0 * CppAD::cos(psi_0)) * dt);
             fg[1 + psi_start + i] = psi_1 - (psi_0 + r_0 * dt);
         }
+
     }
 };
 
-vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state) {
+vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state,double u_des, double v_des) {
     bool ok = true;
     typedef CPPAD_TESTVECTOR(double) Dvector;
 
@@ -128,7 +132,7 @@ vector<double> Mpc::solve(Eigen::Vector3d state, Eigen::MatrixXd desired_state) 
     constraints_upperbound[y_start] = y;
     constraints_upperbound[psi_start] = psi;
 
-    FG_eval fg_eval(desired_state);
+    FG_eval fg_eval(desired_state, u_des, v_des);
 
     string options;
     options += "Integer print_level 0\n";
