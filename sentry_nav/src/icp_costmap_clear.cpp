@@ -50,23 +50,24 @@ public:
     {
         while(ros::ok())
         {
-            static int check_path;
-            static int time_count;
-            if(++time_count>=10) //1s检查一次
-            {
-                //clear_costmap_client_.call(srv);
-                time_count=0;
-            }
-            if(++check_path>=10 && plan_) //1s检查一次
-        {
-            if(global_path_.poses.empty())
-            {
-                clear_costmap_client_.call(srv);
-                check_path=0;
-                ROS_WARN("global_path CHECK!!!");  //全局路径看门狗叫
-            }
-        }
-            ros::Duration(0.1).sleep();  //10hz检查
+            clear_costmap_client_.call(srv);
+        //     static int check_path;
+        //     static int time_count;
+        //     if(++time_count>=10) //1s检查一次
+        //     {
+        //         //clear_costmap_client_.call(srv);
+        //         time_count=0;
+        //     }
+        //     if(++check_path>=10 && plan_) //1s检查一次
+        // {
+        //     if(global_path_.poses.empty())
+        //     {
+        //         clear_costmap_client_.call(srv);
+        //         check_path=0;
+        //         // ROS_WARN("global_path CHECK!!!");  //全局路径看门狗叫
+        //     }
+        // }
+            ros::Duration(0.01).sleep();  //100hz检查
         }
     }
     

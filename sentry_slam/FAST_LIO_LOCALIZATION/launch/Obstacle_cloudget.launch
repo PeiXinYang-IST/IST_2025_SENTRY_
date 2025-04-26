@@ -1,12 +1,13 @@
 <launch>    
     <node pkg="fast_lio_localization" type="Obstacle_cloudget" name="Obstacle_cloudget" output="screen">
-		<param name="kdtree_search_radius" value="3.9"/>
+		<param name="kdtree_search_radius" value="0.01"/>
 		<param name="filter_search_radius" value="0.1"/>
-		<param name="save_obstacle_cloud_time" value="0.5"/>
+		<param name="save_obstacle_cloud_time" value="2.5"/>
 		<param name="icp_success" value="1"/>
-		<param name="clear_x" value="0.45"/>
-		<param name="clear_y" value="0.6"/>
-		<param name="static_inflate_distance" value="0.1"/>
-		<param name="dynamic_inflate_distance" value="0.3"/>
+		<param name="clear_x" value="0.4"/>
+		<param name="clear_y" value="0.5"/>
+		<param name="purely_localization" value="true"/>
+		<param name="static_inflate_distance" value="0.0"/>
+		<param name="dynamic_inflate_distance" value="0.0"/>
 	</node>
 </launch>

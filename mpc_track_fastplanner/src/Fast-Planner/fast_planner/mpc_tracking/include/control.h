@@ -49,7 +49,6 @@ unique_ptr<Mpc> mpc_ptr;
 
 struct Config
 {
-
     std::string trajtopic;
 
     Config(const ros::NodeHandle &nh_priv)
@@ -103,7 +102,7 @@ public:
     trajsub = nh.subscribe("trajectory", 1, &controller::trajCallBack, this,
                               ros::TransportHints().tcpNoDelay());
     control_cmd_pub = nh.createTimer(
-            ros::Duration(0.1), 
+            ros::Duration(0.05), 
             &controller::publish_control_cmd, 
             this
         );
@@ -126,7 +125,7 @@ void replanCallback(const std_msgs::Empty::ConstPtr &msg)
   const double time_out = 0.01;
   ros::Time time_now = ros::Time::now();
   double t_stop = (time_now - trajStartTime_).toSec() + time_out;
-  traj_duration = min(t_stop, traj_duration);
+//    traj_duration = min(t_stop, traj_duration);
 }
 
 void globalPathCallback(const nav_msgs::Path::ConstPtr &msg)
@@ -172,8 +171,7 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
     current_state(1) = msg->pose.pose.position.y + transform.translation().y();
     current_state(2) = msg->pose.pose.position.z + transform.translation().z();
     current_state(0) = dijstra_pos[0].x();
-    current_state(1) = dijstra_pos[0].y()+0.105;
-
+    current_state(1) = dijstra_pos[0].y();
 }
 
 void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
@@ -265,9 +263,9 @@ void trajCallBack(const gcopter::PolyTrajectory::ConstPtr &msg) {
         }
 
     const int nearest_index = pointIdx[0];
-    const double t_start = trajectory_times[nearest_index];
+    const int adjusted_index = std::min(nearest_index + 10, static_cast<int>(trajectory_times.size() - 1));
+    const double t_start = trajectory_times[adjusted_index];
     Eigen::MatrixXd desired_state = Eigen::MatrixXd::Zero(N, 3);
-
 
         //kdtree搜索基准
         // for (int i = 0; i < N; ++i) {

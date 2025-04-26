@@ -101,6 +101,7 @@ void MY_ICP::Initparams()
     private_node_.param<float>("local_pointcloud_y",local_pointcloud_y_,0.10); //局部点云地图y
     private_node_.param<float>("local_pointcloud_z",local_pointcloud_z_,0.10); //局部点云地图y
     private_node_.param<float>("local_ground_pointcloud_z",local_ground_pointcloud_z_,0.10); //局部点云地图y
+    private_node_.param<bool>("purely_localization",purely_localization_,false); //是否直接使用lio的定位
     // gicp.setInputTarget(prior_map_);
     // ndt.setInputTarget(prior_map_);
 }
@@ -174,6 +175,9 @@ void MY_ICP::publish_map_msg_thread()
 {
     using namespace std::chrono_literals;
     while (ros::ok()) {
+        if(purely_localization_)
+        publishTransform(icp_transform);
+        else
         publish_map_msg();
         // 休眠0.04秒  //手动补25fps
         std::this_thread::sleep_for(0.04s);
@@ -219,6 +223,8 @@ void MY_ICP::get_lidar_cloud()
 
 //点云接收回调
 void MY_ICP::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& input) {
+    if(purely_localization_)    return;
+
     using namespace std::chrono_literals;    
     if(!transformed)
     pub_map_to_camera_init();
@@ -371,6 +377,7 @@ void MY_ICP::publishTransform(const Eigen::Matrix4f& transform) {
     // 设置子坐标帧ID
     transformStamped.child_frame_id = "camera_init";
 
+if(!purely_localization_){
     // 将Eigen::Matrix4f转换为geometry_msgs::Vector3和geometry_msgs::Quaternion
     Eigen::Affine3f eigen_affine(transform);
     transformStamped.transform.translation.x = eigen_affine.translation()(0);
@@ -382,7 +389,15 @@ void MY_ICP::publishTransform(const Eigen::Matrix4f& transform) {
     transformStamped.transform.rotation.y = quat.y();
     transformStamped.transform.rotation.z = quat.z();
     transformStamped.transform.rotation.w = quat.w();
-
+}else{
+    transformStamped.transform.translation.x = 0;
+    transformStamped.transform.translation.y = 0;
+    transformStamped.transform.translation.z = 0;
+    transformStamped.transform.rotation.x = 0;
+    transformStamped.transform.rotation.y = 0;
+    transformStamped.transform.rotation.z = 0;
+    transformStamped.transform.rotation.w = 1; // 单位四元数，表示没有旋转
+}
     // 发布变换
     map_to_odom_pub.publish(transformStamped);
 

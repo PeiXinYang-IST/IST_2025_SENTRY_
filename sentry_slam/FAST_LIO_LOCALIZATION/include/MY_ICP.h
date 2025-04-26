@@ -115,6 +115,7 @@ private:
     bool find_times;
     bool transformed;
     bool saved_PCD;
+    bool purely_localization_;
     bool finish_cut_cloud_;
     int find_min_angle;
     float min_get_score;

@@ -60,6 +60,7 @@ public:
   ros::Subscriber trajsub;
   ros::Publisher simplified_path_pub_;
   ros::Publisher idx_pub_;
+  ros::Publisher esdf_path_pub_;
   nav_msgs::Path JPS_path_,global_path,mpc_path_;
   ros::Publisher mpc_path_update_pub_;
   Trajectory<5> currentTraj_;

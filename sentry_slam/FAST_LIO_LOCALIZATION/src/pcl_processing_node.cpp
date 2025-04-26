@@ -134,7 +134,7 @@ for (size_t i = 0; i < cloud->points.size(); ++i) {
     // 滤除z轴恰当位置的点云
     pass_z.setInputCloud(cloud_filtered_cylinder_removed_z_1);
     pass_z.setFilterFieldName("z");
-    pass_z.setFilterLimits(clear_distance_z+0.4,std::numeric_limits<float>::max()); // 距离雷达z坐标过高的点云滤除
+    pass_z.setFilterLimits(clear_distance_z+1.0,std::numeric_limits<float>::max()); // 距离雷达z坐标过高的点云滤除
     pass_z.filter(*cloud_filtered_cylinder_removed_z_1); // 更新
 
 

@@ -71,7 +71,7 @@ void SDFMap::initMap(ros::NodeHandle& nh) {
   node_.param("sdf_map/show_esdf_time", mp_.show_esdf_time_, false);
   node_.param("sdf_map/pose_type", mp_.pose_type_, 1);
 
-  node_.param("sdf_map/frame_id", mp_.frame_id_, string("world"));
+  node_.param("sdf_map/frame_id", mp_.frame_id_, string("odom"));
   node_.param("sdf_map/local_bound_inflate", mp_.local_bound_inflate_, 1.0);
   node_.param("sdf_map/local_map_margin", mp_.local_map_margin_, 1);
   node_.param("sdf_map/ground_height", mp_.ground_height_, 1.0);

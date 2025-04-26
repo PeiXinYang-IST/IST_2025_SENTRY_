@@ -35,7 +35,7 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   grad_pub_ = nh.advertise<geometry_msgs::Vector3>("/grad", 100); //这里设置的是esdf地图的梯度向量
   global_sub = nh.subscribe("/planning/global_enable", 1, &FastPlannerManager::globalCallback,this);
   dist_pub_ = nh.advertise<std_msgs::Float64>("/dist", 10);
-  path_sub_ = nh.subscribe("/move_base1/NavfnROS/plan", 10, &FastPlannerManager::pathCallback, this);
+  path_sub_ = nh.subscribe("/dijstra_path", 10, &FastPlannerManager::pathCallback, this);
   JPS_sub = nh.subscribe("/jps_path", 10, &FastPlannerManager::JPS_pathCallback, this);
   trajsub = nh.subscribe("/trajectory", 1, &FastPlannerManager::trajCallBack, this,
                               ros::TransportHints().tcpNoDelay());
@@ -43,6 +43,7 @@ void FastPlannerManager::initPlanModules(ros::NodeHandle& nh) {
   mpc_path_update_pub_ = nh.advertise<std_msgs::Empty>("/mpc_path_update", 1);
   mpc_path_sub = nh.subscribe("MPC_TRACK_PATH", 10, &FastPlannerManager::mpcpathCallback, this);
   idx_pub_ = nh.advertise<std_msgs::Float64>("/idx", 10);
+  esdf_path_pub_ = nh.advertise<nav_msgs::Path>("/esdf_path", 1);
 
   check_collision_pub = nh.createTimer(
             ros::Duration(0.25), 
@@ -102,10 +103,10 @@ void FastPlannerManager::GCOPTER_check_collision(const ros::TimerEvent &e)
 
     for (double t = 0.1; t < total_duration; t += query_interval) {
       Eigen::Vector3d point = currentTraj_.getPos(t); // 获取轨迹点
-      point.z() = 0.2;
+      point.z() = 0.05;
       double dist = edt_environment_->evaluateCoarseEDT(point, -1.0); // 查询 edt 值
       //ROS_WARN("dist: %f", dist);
-      if(dist < 0.05)
+      if(dist < 0.01)
       {
         ROS_WARN("collision");
         std_msgs::Empty mpc_path_update_msg;
@@ -294,6 +295,50 @@ void douglasPeucker(const std::vector<Eigen::Vector3d>& points,
 
 std::vector<Eigen::Vector3d> simplified_points;
 void FastPlannerManager::pathCallback(const nav_msgs::Path &msg) {
+  global_path.poses.clear();
+  global_path.header = msg.header;
+  global_path.poses = msg.poses;
+
+for(size_t i = 0; i < msg.poses.size(); i+=1) {
+      geometry_msgs::PoseStamped pose = msg.poses[i];
+      Eigen::Vector3d point(
+          pose.pose.position.x, 
+          pose.pose.position.y,
+          0.05
+      );
+      double dist = edt_environment_->evaluateCoarseEDT(point, -1.0);
+      if(dist < 0.2)
+      {
+        Eigen::Vector3d grad;
+
+          auto start_time = ros::Time::now();
+          edt_environment_->evaluateEDTWithGrad(point, -1.0, dist, grad);
+          auto end_time = ros::Time::now();
+
+          // ROS_WARN("Time taken for evaluateEDTWithGrad: %f seconds", (end_time - start_time).toSec());   
+          if (grad.norm() > 1e-4) {
+          grad.normalize();
+          point += grad * 0.1; // 推离0.1m
+          global_path.poses[i].pose.position.x = point.x();
+          global_path.poses[i].pose.position.y = point.y();
+          global_path.poses[i].pose.position.z = 0.05;
+        }
+      }
+}
+
+nav_msgs::Path path_msg;
+path_msg.header.frame_id = "odom";
+path_msg.header.stamp = ros::Time::now();
+path_msg.poses.resize(global_path.poses.size());
+for (size_t i = 0; i < global_path.poses.size(); ++i) {
+    path_msg.poses[i].pose.position.x = global_path.poses[i].pose.position.x;
+    path_msg.poses[i].pose.position.y = global_path.poses[i].pose.position.y;
+    path_msg.poses[i].pose.position.z = 0.05;  // 2D路径可设为0
+    path_msg.poses[i].header.frame_id = global_path.header.frame_id;
+}
+
+esdf_path_pub_.publish(path_msg);
+
 //mpc路径不为空
 //   if(mpc_path_updated)
 //   {

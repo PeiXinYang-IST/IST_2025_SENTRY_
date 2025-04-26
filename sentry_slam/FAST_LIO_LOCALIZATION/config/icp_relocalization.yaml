@@ -13,3 +13,4 @@ local_pointcloud_x: 30 #局部点云地图x
 local_pointcloud_y: 30 #局部点云地图y
 local_pointcloud_z: 30.5 #局部点云地图z
 local_ground_pointcloud_z_: 0.05
+purely_localization: true #是否纯定位

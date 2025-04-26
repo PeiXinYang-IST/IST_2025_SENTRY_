@@ -49,9 +49,9 @@ restart_nodes() {
     # echo "NAV relaunched with PID: $PID_PID"
 
     # sleep 1
-    roslaunch plan_manage real.launch &
-    PID_FAST_PLANNER=$!
-    echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
+    # roslaunch plan_manage real.launch &
+    # PID_FAST_PLANNER=$!
+    # echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
     roslaunch plan_manage mpc.launch &
     PID_MPC=$!

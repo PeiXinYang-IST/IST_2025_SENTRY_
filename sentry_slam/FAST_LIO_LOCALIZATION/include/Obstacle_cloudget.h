@@ -57,6 +57,7 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2/utils.h>  // 必须包含以使用tf2::getYaw
+#include <deque>
 
 enum NavigationMode {
     PURSUIT,
@@ -101,7 +102,7 @@ class Obstacle_cloud_get
     float filter_search_radius_;
     float kdtree_search_radius_;
     clock_t start_time,end_time;
-    
+    bool purely_localization_ = false;
     //clear costmap
     costmap_2d::Costmap2DROS* costmap_ros_;
     costmap_2d::ObstacleLayer* obstacle_layer_;
@@ -160,5 +161,5 @@ class Obstacle_cloud_get
 
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
-
+    std::deque<std::pair<ros::Time, pcl::PointCloud<pcl::PointXYZ>::Ptr>> cloud_queue_;
 };
