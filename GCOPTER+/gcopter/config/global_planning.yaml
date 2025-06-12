@@ -1,0 +1,52 @@
+MapTopic:                   '/Obstacle_cloudget/world_obstacle_cloud'
+# /Obstacle_cloudget/world_obstacle_cloud
+TargetTopic:                '/move_base_simple/goal'
+
+DilateRadius:               0.35
+
+VoxelWidth:                 0.05
+
+MapBound:                   [-25.0, 25.0, -25.0, 25.0, 0.0, 0.4]
+
+TimeoutRRT:                 0.05
+
+MaxVelMag:                  1.5
+
+MaxBdrMag:                  0.5
+
+MaxTiltAngle:               0.5
+
+MinThrust:                  0.5
+
+MaxThrust:                  8.0
+
+VehicleMass:                0.61
+
+GravAcc:                    9.8
+
+HorizDrag:                  0.70
+
+VertDrag:                   0.80
+
+ParasDrag:                  0.01
+
+SpeedEps:                   0.0001
+
+WeightT:                    15.0
+
+ChiVec:                     [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5]
+
+SmoothingEps:               1.0e-2
+
+IntegralIntervs:            8
+
+RelCostTol:                 5.0e-5
+
+Odomtopic:               '/odom'
+
+traj_sec:                  10
+
+corridor_distance:          0.1
+
+
+

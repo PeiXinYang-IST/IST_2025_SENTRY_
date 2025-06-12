@@ -1,0 +1,41 @@
+
+# sdf.yaml
+sdf_map:
+  resolution: 0.1
+  map_size_x: 40
+  map_size_y: 30
+  map_size_z: 0.5       # 需要增大Z轴范围（原0.5太小）
+  local_update_range_x: 40.0
+  local_update_range_y: 30.0
+  local_update_range_z: 0.5
+  obstacles_inflation: 0.2
+  local_bound_inflate: 0.0
+  local_map_margin: 50
+  ground_height: 0
+  cx: 0.0
+  cy: 0.0
+  fx: 0.0
+  fy: 0.0
+  use_depth_filter: true
+  depth_filter_tolerance: 0.15
+  depth_filter_maxdist: 5.0
+  depth_filter_mindist: 0.4
+  depth_filter_margin: 2
+  k_depth_scaling_factor: 1000.0
+  skip_pixel: 2
+  p_hit: 0.95
+  p_miss: 0.05
+  p_min: 0.12
+  p_max: 0.90
+  p_occ: 0.80
+  min_ray_length: 0.2
+  max_ray_length: 10.0
+  esdf_slice_height: 0.1
+  visualization_truncate_height: 2.49
+  virtual_ceil_height: 2.5
+  show_occ_time: false
+  show_esdf_time: false
+  pose_type: 2
+  frame_id: odom
+
+
