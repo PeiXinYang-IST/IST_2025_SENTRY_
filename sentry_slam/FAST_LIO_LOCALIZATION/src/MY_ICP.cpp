@@ -395,7 +395,7 @@ if(!purely_localization_){
     transformStamped.transform.translation.z = 0;
     transformStamped.transform.rotation.x = 0;
     transformStamped.transform.rotation.y = 0;
-    transformStamped.transform.rotation.z = 0;
+    transformStamped.transform.rotation.z = 0; //红方时为1 
     transformStamped.transform.rotation.w = 1; // 单位四元数，表示没有旋转
 }
     // 发布变换

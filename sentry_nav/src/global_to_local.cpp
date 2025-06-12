@@ -14,35 +14,45 @@ public:
         // 初始化路径点
         initializeWaypoints();
     }
-
+ 
 private:
     void initializeWaypoints() {
         geometry_msgs::PoseStamped waypoint;
         waypoint.header.frame_id = "odom";
-        // 中心增益区 0
-        waypoint.pose.position.x = -1.8;
-        waypoint.pose.position.y = 4.7;
+
+        waypoint.pose.position.x = -1.563;
+        waypoint.pose.position.y = -5.78;
         waypoint.pose.orientation.z = 0.760;
         waypoint.pose.orientation.w = 0.650;
         waypoints_.push_back(waypoint);       
-        // waypoint.pose.position.x = -1.8;
-        // waypoint.pose.position.y = 4.7;
-        // waypoint.pose.orientation.z = 0.760;
-        // waypoint.pose.orientation.w = 0.650;`
-        // waypoints_.push_back(waypoint);     
-        // 补给区 1
-        waypoint.pose.position.x = 0.0;
-        waypoint.pose.position.y = 0.0;
+
+        waypoint.pose.position.x = 4.06;
+        waypoint.pose.position.y = 2.60;
         waypoint.pose.orientation.z = 0.760;
         waypoint.pose.orientation.w = 0.650;
         waypoints_.push_back(waypoint);
-        // waypoint.pose.position.x = 1.05;
-        // waypoint.pose.position.y = -0.55;
-        // waypoint.pose.orientation.z = 0.760;
-        // waypoint.pose.orientation.w = 0.650;
-        // waypoints_.push_back(waypoint);        //击打增益区 2
-        waypoint.pose.position.x = 0.2;
-        waypoint.pose.position.y = 5.0;
+
+        //堡垒
+        waypoint.pose.position.x = -1.26;
+        waypoint.pose.position.y = -5.22;
+        waypoint.pose.orientation.z = 0.760;
+        waypoint.pose.orientation.w = 0.650;
+        waypoints_.push_back(waypoint);
+        
+        waypoint.pose.position.x =11.552;
+        waypoint.pose.position.y = 5.991;
+        waypoint.pose.orientation.z = 0.760;
+        waypoint.pose.orientation.w = 0.650;
+        waypoints_.push_back(waypoint);
+// 15.711, 3.507, 0.000
+        waypoint.pose.position.x = 4.667; //15.711
+        waypoint.pose.position.y = 0.566; //3.507
+        waypoint.pose.orientation.z = 0.760;
+        waypoint.pose.orientation.w = 0.650;
+        waypoints_.push_back(waypoint);
+        
+        waypoint.pose.position.x = 4.667;
+        waypoint.pose.position.y = 0.566;
         waypoint.pose.orientation.z = 0.760;
         waypoint.pose.orientation.w = 0.650;
         waypoints_.push_back(waypoint);
@@ -77,27 +87,37 @@ private:
         geometry_msgs::PoseStamped pose_msg;
         pose_msg.header.stamp = ros::Time::now();
         pose_msg.header.frame_id = "odom";
-        
+        static double start_goal_time = ros::Time::now().toSec();
+
         // 根据状态选择目标点索引
         int index;
-        if (state == 0) {
+        if (state == 7) { //家
             index = 0;
-        } else if (state == 1) {
-            index = 1;
-        } else if (state == 2) {
+        } else if (state == 4) { //右侧高地
+            index = 1; 
+        } else if (state == 5) { //左侧对方高地
+            index = 3;
+        } else if (state == 6) { //堡垒
             index = 2;
-        } else {
+        } else if (state == 8) { 
+            index = 4;
+        } else if (state == 9) { 
+            index = 5;
+        }
+
+        else {
             ROS_WARN("Invalid state: %d", state);
             return;
         }
         
+
         pose_msg.pose = waypoints_[index].pose;
         pub_.publish(pose_msg);
     }
 
     void startStateTimer(uint8_t state) {
         // 创建循环定时器（每8秒触发一次）
-        state_timer_ = nh_.createTimer(ros::Duration(8.0), 
+        state_timer_ = nh_.createTimer(ros::Duration(100.0), 
             [this, state](const ros::TimerEvent&) {
                 // 验证状态是否仍然有效
                 if (current_pos_state_ == state) {
@@ -108,6 +128,7 @@ private:
         );
     }
 
+ 
 
     void stopStateTimer() {
         if (state_timer_.isValid()) {

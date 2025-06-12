@@ -14,7 +14,7 @@ public:
         initializeWaypoints();
 
         // Set timer to publish waypoints every 8 seconds
-        timer_ = nh_.createTimer(ros::Duration(8.0), &GoalPublisher::timerCallback, this);
+        timer_ = nh_.createTimer(ros::Duration(8), &GoalPublisher::timerCallback, this);
     }
         private:
             void initializeWaypoints()
@@ -22,16 +22,42 @@ public:
                 geometry_msgs::PoseStamped waypoint;
 
                 // Add first waypoint
+                // waypoint.pose.position.x = 3.1;
+                // waypoint.pose.position.y = 5.685;
+                // waypoint.pose.orientation.w = 1.0;
+                // waypoints_.push_back(waypoint);
+
+                // waypoint.pose.position.x = 3.198;
+                // waypoint.pose.position.y = 7.8;
+                // waypoint.pose.orientation.w = 1.0;
+                // waypoints_.push_back(waypoint);
+
+                // // Add second waypoint
+                // waypoint.pose.position.x = 1.706;
+                // waypoint.pose.position.y = -0.304;
+                // waypoint.pose.orientation.w = 1.0;
+                // waypoints_.push_back(waypoint);
+
+                // Add second waypoint
                 waypoint.pose.position.x = 0;
-                waypoint.pose.position.y = 0.485;
+                waypoint.pose.position.y = 0;
                 waypoint.pose.orientation.w = 1.0;
                 waypoints_.push_back(waypoint);
 
-                // Add second waypoint
-                waypoint.pose.position.x = -1.706;
-                waypoint.pose.position.y = 4.304;
+                waypoint.pose.position.x = -0.414;
+                waypoint.pose.position.y = -3.81;
                 waypoint.pose.orientation.w = 1.0;
                 waypoints_.push_back(waypoint);
+
+                waypoint.pose.position.x = -1.438;
+                waypoint.pose.position.y = -6.51;
+                waypoint.pose.orientation.w = 1.0;
+                waypoints_.push_back(waypoint);
+
+                waypoint.pose.position.x = -2.396;
+                waypoint.pose.position.y = -4.19;
+                waypoint.pose.orientation.w = 1.0;
+                waypoints_.push_back(waypoint);                
             }
 
     void timerCallback(const ros::TimerEvent&)

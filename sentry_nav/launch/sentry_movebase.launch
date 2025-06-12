@@ -20,8 +20,8 @@
     <!-- <include file="$(find sentry_nav)/launch/pid.launch">
 	</include> -->
 
-    <!-- <node pkg="sentry_nav" type="global_to_local" name="global_to_local"/> -->
-
+    <!-- <node pkg="sentry_nav" type="goal" name="goal"/> -->
+    <node pkg="sentry_nav" type="global_to_local" name="global_to_local"/>
     <!-- <include file="$(find sentry_decision)/launch/pursuit.launch">
 	</include> -->
 

@@ -31,6 +31,7 @@ echo "Fast Lio launched with PID: $PID_FAST_LIO"
 function save_map {
     echo "Saving map..."
     rosrun map_server map_saver map:=/projected_map -f /home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/Map/demo2
+    rosrun map_server map_saver map:=/projected_map -f /home/rm-nuc13/tutututu/demo
     rosrun octomap_server octomap_saver -f /home/rm-nuc13/IST_sentry_navigation/src/IST_2025_sentry/sentry_slam/FAST_LIO_LOCALIZATION/Map/octomap.bt
     echo "Map saved."
 }

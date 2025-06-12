@@ -251,7 +251,6 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
 
 	start_time=clock();
 
-
     ros::Time current_time = ros::Time::now();
     
     // 1. 添加当前点云到队列
@@ -301,7 +300,7 @@ void Obstacle_cloud_get::PointCloudObstacleRemoval(pcl::PointCloud<pcl::PointXYZ
     // 设置搜索半径
     outrem.setRadiusSearch(filter_search_radius_);
     // 设置最小邻居数
-    outrem.setMinNeighborsInRadius(10);
+    outrem.setMinNeighborsInRadius(15);
     // 执行滤波
     outrem.filter(*cloud_filtered_radius);
     }

@@ -53,7 +53,7 @@ restart_nodes() {
     # PID_FAST_PLANNER=$!
     # echo "Fast planner relaunched with PID: $PID_FAST_PLANNER"
 
-    roslaunch plan_manage mpc.launch &
+    roslaunch gcopter mpc.launch &
     PID_MPC=$!
     echo "Fast planner relaunched with PID: $PID_MPC"
 

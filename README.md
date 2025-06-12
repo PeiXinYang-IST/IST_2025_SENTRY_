@@ -358,3 +358,6 @@ docker上云
 1.实现使用里程计实时规划 路线
 2.将返回的五次多项式作为LMPC目标跟踪 跟随replan信息（0.01s向轨迹forward急刹）
 
+部署视频： https://www.bilibili.com/video/BV1RULizJEYn/?spm_id_from=333.1387.homepage.video_card.click
+
+https://www.bilibili.com/video/BV1Yj5RzcEJo/?spm_id_from=333.1387.homepage.video_card.click
