@@ -21,6 +21,7 @@ struct Node {
     bool operator<(const Node& other) const { return this->f() > other.f(); }
 };
 
+
 class JPSPlanner {
 private:
     ros::NodeHandle nh_;
